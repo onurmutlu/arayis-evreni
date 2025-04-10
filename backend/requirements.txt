@@ -1,0 +1,14 @@
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
+alembic>=1.10.0 # Veritabanı migration için
+python-dotenv>=1.0.0 # Ortam değişkenleri için
+passlib[bcrypt]>=1.7.4 # Şifreleme için
+python-jose[cryptography]>=3.3.0 # JWT için
+gunicorn>=21.2.0 # Production sunucusu için
+requests>=2.31.0 # HTTP istekleri için
+python-multipart>=0.0.5 # Form data işleme
+starlette>=0.30.0 # CORS ve middleware
+sqlalchemy_utils>=0.41.0 # SQLAlchemy yardımcıları
+# Gerekirse ek kütüphaneler eklenebilir

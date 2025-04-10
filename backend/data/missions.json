@@ -1,0 +1,74 @@
+[
+  {
+    "id": "flirt_bio_1",
+    "category": "flirt",
+    "title": "Flörtöz Biyografi",
+    "description": "Profiline dikkat çekici yeni bir biyografi ekle.",
+    "xp_reward": 30,
+    "cooldown_hours": 6,
+    "required_nft_category": "flirt"
+  },
+  {
+    "id": "dao_vote_1",
+    "category": "dao",
+    "title": "DAO Oylaması",
+    "description": "Güncel DAO teklifi için oyunu kullan.",
+    "xp_reward": 50,
+    "cooldown_hours": 24,
+    "required_nft_category": "dao"
+  },
+  {
+    "id": "guardian_leaderboard_1",
+    "category": "guardian",
+    "title": "Liderlik Savunması",
+    "description": "Liderlik tablosunda ilk 20 arasındaki yerini koru.",
+    "xp_reward": 75,
+    "cooldown_hours": 48,
+    "required_nft_category": "guardian"
+  },
+  {
+    "id": "city_explore_1",
+    "category": "city",
+    "title": "Şehir Keşfi",
+    "description": "Farklı bir kullanıcının profilini ziyaret et.",
+    "xp_reward": 20,
+    "cooldown_hours": 4,
+    "required_nft_category": "city"
+  },
+  {
+    "id": "general_share_1",
+    "category": "general",
+    "title": "Paylaşımcı Ruh",
+    "description": "Uygulama davet linkini bir arkadaşınla paylaş.",
+    "xp_reward": 40,
+    "cooldown_hours": 12,
+    "required_nft_category": null
+  },
+  {
+    "id": "general_login_streak_1",
+    "category": "general",
+    "title": "Günlük Ziyaretçi",
+    "description": "Uygulamayı üst üste 3 gün ziyaret et.",
+    "xp_reward": 60,
+    "cooldown_hours": 72, 
+    "required_nft_category": null
+  },
+    {
+    "id": "flirt_message_1",
+    "category": "flirt",
+    "title": "İlk Mesaj",
+    "description": "Eşleştiğin birine ilk mesajı sen gönder.",
+    "xp_reward": 25,
+    "cooldown_hours": 8,
+    "required_nft_category": "flirt"
+  },
+  {
+    "id": "dao_proposal_1",
+    "category": "dao",
+    "title": "Fikir Lideri",
+    "description": "DAO için yeni bir teklif taslağı oluştur.",
+    "xp_reward": 100,
+    "cooldown_hours": 72,
+    "required_nft_category": "dao"
+  }
+] 
