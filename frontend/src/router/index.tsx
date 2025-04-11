@@ -34,17 +34,18 @@ const LoadingIndicator: React.FC = () => (
 // Korunması gereken route'lar için bir wrapper bileşeni
 // Token yoksa login'e veya bir "bekleme" ekranına yönlendirebilir.
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
-  const token = getAuthToken();
+  // Geliştirme modunda her zaman token var olarak kabul edelim
+  // const token = getAuthToken();
 
-  // Henüz token kontrol edilmemiş veya yoksa bekleme göstergesi
-  // Gerçek uygulamada, token'ı async olarak alıp durumu yönetmek daha iyi olabilir
-  if (!token) {
-    return (
-      <div className="flex justify-center items-center h-screen text-textSecondary">
-        Giriş yapılıyor veya yetki kontrol ediliyor...
-      </div>
-    );
-  }
+  // // Henüz token kontrol edilmemiş veya yoksa bekleme göstergesi
+  // // Gerçek uygulamada, token'ı async olarak alıp durumu yönetmek daha iyi olabilir
+  // if (!token) {
+  //   return (
+  //     <div className="flex justify-center items-center h-screen text-textSecondary">
+  //       Giriş yapılıyor veya yetki kontrol ediliyor...
+  //     </div>
+  //   );
+  // }
 
   return <>{children}</>; // React.ReactNode için Fragment kullan
 };

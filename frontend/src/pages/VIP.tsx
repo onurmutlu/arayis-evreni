@@ -4,6 +4,8 @@ import Buton from '../components/Buton';
 import {
     Star, Lock, Unlock, Loader2, AlertTriangle, Crown, CheckCircle
 } from 'lucide-react';
+import { triggerHapticFeedback, showNotification } from '../utils/hapticFeedback';
+import { fetchVipStatus, purchaseVip, fetchUserWallet } from '../utils/api';
 
 // Backend'deki VipTaskState modeline uygun arayüz
 interface VipTaskState {
@@ -29,8 +31,76 @@ const VIP: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true); 
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null); // Başarı mesajı state'i
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [vipStatus, setVipStatus] = useState<boolean>(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const userId = 'user123'; // Simüle edilmiş kullanıcı ID'si
+
+  // VIP durumunu kontrol etme
+  const checkVipStatus = async () => {
+    try {
+      setIsLoading(true);
+      const status = await fetchVipStatus();
+      setVipStatus(status);
+    } catch (error) {
+      console.error("VIP durumu kontrol edilirken hata:", error);
+      triggerHapticFeedback('error');
+      showNotification('error');
+      setError("VIP durumu kontrol edilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // VIP satın alma
+  const handlePurchaseVip = async () => {
+    if (isPurchasing) return;
+    
+    setIsPurchasing(true);
+    
+    try {
+      triggerHapticFeedback('medium');
+      const result = await purchaseVip();
+      
+      if (result.vip_access_granted) {
+        triggerHapticFeedback('success');
+        showNotification('success');
+        setToast({
+          message: "VIP erişimi başarıyla aktifleştirildi!",
+          type: 'success'
+        });
+        
+        // VIP durumunu güncelle
+        await checkVipStatus();
+        
+        // Yıldız bakiyesini güncelle
+        const wallet = await fetchUserWallet();
+        setUserStars(wallet.stars);
+      } else {
+        triggerHapticFeedback('error');
+        showNotification('error');
+        setToast({
+          message: result.message || "VIP erişimi satın alınamadı!",
+          type: 'error'
+        });
+      }
+    } catch (error: any) {
+      console.error("VIP satın alınırken hata:", error);
+      triggerHapticFeedback('error');
+      showNotification('error');
+      
+      setToast({
+        message: error.message || "VIP satın alınırken bir hata oluştu.",
+        type: 'error'
+      });
+    } finally {
+      setIsPurchasing(false);
+      
+      // Toast mesajını birkaç saniye sonra kaldır
+      setTimeout(() => setToast(null), 5000);
+    }
+  };
 
   // Başlangıçta görevleri ve kullanıcı yıldızını yükle
   const loadVipData = useCallback(async () => {

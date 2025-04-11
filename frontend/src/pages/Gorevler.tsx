@@ -3,127 +3,98 @@ import SayfaBasligi from '../components/SayfaBasligi';
 import Buton from '../components/Buton';
 import {
   Swords, Heart, ShieldCheck, Building, Zap,
-  AlertCircle, Loader2, Lock, CheckCircle, Info, RefreshCw, Hourglass // Hourglass ikonu eklendi
+  AlertCircle, Loader2, Lock, CheckCircle, Info, RefreshCw, Hourglass
 } from 'lucide-react';
-import { formatDistanceToNowStrict } from 'date-fns'; // Kalan süre için
+import { formatDistanceToNowStrict } from 'date-fns';
 import { tr } from 'date-fns/locale';
-// import { mockNFTData, NFT } from '../data/nftData'; // Lokal veri kaldırıldı
+import { useTelegram } from '../contexts/TelegramContext';
+import { fetchMissions, completeMission } from '../utils/api';
+import { Mission, CompleteMissionResponse } from '../types';
+import { triggerHapticFeedback, showNotification } from '../utils/hapticFeedback';
 
-// Backend'deki MissionState modeline uygun arayüz
-interface MissionState {
-  id: string; // Görev ID'si artık string (JSON'dan geldiği için)
-  category: string; // JSON'dan gelen genel görev kategorisi (ikon için vb.) - EKLENDİ
-  title: string;
-  description: string;
-  required_nft_category: string | null;
-  xp_reward: number; // Backend'den gelen isimle eşleşiyor
-  unlocked: boolean;
-  can_complete: boolean;
-  last_completed: string | null; // Datetime string olarak gelebilir
-  cooldown_hours: number; // Cooldown süresi (JSON'dan)
-}
-
-// Backend'den gelen CompletedMissionInfo modeline uygun arayüz
-interface CompletedMissionInfo {
-    message: string;
-    xp_earned: number;
-    streak_bonus_xp?: number;
-    streak_bonus_nft_earned?: string;
-    new_level?: number;
-}
-
-// Bildirim kategorisine göre ikon eşleştirmesi (Bildirimler.tsx'den alınabilir veya burada tanımlanabilir)
-// Şimdilik görev tiplerine göre ikonları manuel eşleştirelim (API yanıtında ikon bilgisi yoksa)
+// Kategori ikonları
 const categoryIcons: Record<string, React.ElementType> = {
   flirt: Heart,
   dao: ShieldCheck,
   guardian: Swords,
   city: Building,
-  general: Info, // Genel kategori için
-  default: Zap // Eğer kategori yoksa veya eşleşmiyorsa
+  general: Info,
+  default: Zap
 };
 
-// Örnek API base URL (yapılandırmadan gelmeli)
-const API_BASE_URL = 'http://127.0.0.1:8000'; // Veya environment variable
-
 const Gorevler: React.FC = () => {
-  const [missions, setMissions] = useState<MissionState[]>([]);
+  const { getTelegramUserId } = useTelegram();
+  const [missions, setMissions] = useState<Mission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [completingMissionId, setCompletingMissionId] = useState<string | null>(null);
+  const [completingMissionId, setCompletingMissionId] = useState<number | null>(null);
   const [completionStatus, setCompletionStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-  // Simüle edilmiş kullanıcı ID'si
-  const userId = 'user123'; 
+  const [xpAnimation, setXpAnimation] = useState<{ amount: number, visible: boolean }>({ amount: 0, visible: false });
 
   // Görevleri fetch eden fonksiyon
-  const fetchUserMissions = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    // Completion status'u temizle
-    setCompletionStatus(null); 
+  const fetchUserMissions = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/missions/${userId}`);
-      if (!response.ok) {
-        let errorMsg = `Görevler alınamadı: ${response.status}`;
-        try { const errData = await response.json(); errorMsg = errData.detail || errorMsg; } catch(e){}
-        throw new Error(errorMsg);
-      }
-      const data: MissionState[] = await response.json();
-      setMissions(data);
-    } catch (err: any) {
-      console.error("Görevler API'den çekilirken hata:", err);
-      setError(err.message || "Görevler yüklenirken bir sorun oluştu.");
+      setIsLoading(true);
+      const missions = await fetchMissions();
+      setMissions(missions);
+    } catch (error) {
+      console.error("Görevler yüklenirken hata:", error);
+      triggerHapticFeedback('error');
+      showNotification('error');
+      setError("Görevler yüklenemedi. Lütfen tekrar deneyin.");
     } finally {
       setIsLoading(false);
     }
-  }, [userId]); // useCallback ile fonksiyonu memoize et
+  };
 
-  // İlk yükleme ve görev tamamlama sonrası için useEffect
+  // İlk yükleme
   useEffect(() => {
     fetchUserMissions();
-  }, [fetchUserMissions]); // fetchUserMissions değiştiğinde çalışır
+  }, []);
 
   // Görevi tamamlama fonksiyonu
-  const handleCompleteMission = async (missionId: string) => {
+  const handleCompleteMission = async (missionId: number) => {
     if (completingMissionId) return; // Zaten bir işlem varsa engelle
 
     setCompletingMissionId(missionId);
     setCompletionStatus(null);
-    setError(null); // Önceki genel hataları temizle
+    setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/complete_mission/${userId}/${missionId}`, {
-        method: 'POST'
+      triggerHapticFeedback('medium');
+      const result = await completeMission(missionId);
+      
+      // XP animasyonu göster
+      if (result.xp_gained && result.xp_gained > 0) {
+        setXpAnimation({ 
+          amount: result.xp_gained || 0, 
+          visible: true 
+        });
+        setTimeout(() => {
+          setXpAnimation(prev => ({ ...prev, visible: false }));
+        }, 3000);
+      }
+      
+      // Başarı feedback'i
+      triggerHapticFeedback('success');
+      showNotification('success');
+      
+      setCompletionStatus({ 
+        message: `Görev tamamlandı! +${result.xp_gained || result.new_xp} XP kazandın!${result.level_up ? ' ✨ Seviye atladın!' : ''}`, 
+        type: 'success' 
       });
 
-      const resultData = await response.json(); // Yanıtı her zaman oku
-
-      if (!response.ok) {
-        throw new Error(resultData.detail || `Görev ${missionId} tamamlanamadı: ${response.status}`);
-      }
-
-      const result: CompletedMissionInfo = resultData;
-      
-      // Başarı mesajı göster (Bonusları içerebilir)
-      let successMessage = `${result.message} +${result.xp_earned} XP kazandın!`;
-      if (result.streak_bonus_xp) {
-          successMessage += ` 🔥 +${result.streak_bonus_xp} XP zincir bonusu!`;
-      }
-      if (result.streak_bonus_nft_earned) {
-          successMessage += ` 🎁 Yeni bir mini-NFT kazandın! (${result.streak_bonus_nft_earned})`;
-      }
-       if (result.new_level) {
-          successMessage += ` ✨ Tebrikler! Seviye ${result.new_level}'e yükseldin!`;
-      }
-      setCompletionStatus({ message: successMessage, type: 'success' });
-
-      // Görev listesini yenile (cooldown durumunu güncellemek için)
-      await fetchUserMissions(); 
-      // TODO: Profildeki XP/Level/Streak bilgisini de güncellemek için global state veya context kullanılabilir.
-
+      // Görev listesini yenile
+      await fetchUserMissions();
     } catch (err: any) {
       console.error(`Görev ${missionId} tamamlanırken hata:`, err);
-      setCompletionStatus({ message: err.message || "Görev tamamlanırken bir hata oluştu.", type: 'error' });
+      triggerHapticFeedback('error');
+      showNotification('error');
+      
+      setCompletionStatus({ 
+        message: err.message || "Görev tamamlanırken bir hata oluştu.", 
+        type: 'error' 
+      });
     } finally {
       setCompletingMissionId(null);
       // Başarı/hata mesajını birkaç saniye sonra kaldır
@@ -145,11 +116,11 @@ const Gorevler: React.FC = () => {
       return formatDistanceToNowStrict(cooldownEndDate, { addSuffix: true, locale: tr });
     } catch (e) {
       console.error("Error parsing date for cooldown:", e);
-      return null; // Tarih parse edilemezse cooldown yokmuş gibi davran
+      return null;
     }
   };
 
-  // Kategori adını daha okunabilir hale getir (opsiyonel)
+  // Kategori adını daha okunabilir hale getir
   const getReadableCategoryName = (category: string | null): string => {
       if (!category) return '';
       const names: { [key: string]: string } = {
@@ -166,6 +137,15 @@ const Gorevler: React.FC = () => {
     <div className="p-4 max-w-4xl mx-auto pb-20">
       <SayfaBasligi title="Aktif Görevler" icon={Swords} />
 
+      {/* XP Animasyonu */}
+      {xpAnimation.visible && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="text-3xl font-bold text-primary animate-bounce-up-and-fade">
+            +{xpAnimation.amount} XP
+          </div>
+        </div>
+      )}
+
       {/* Yükleme durumu */} 
       {isLoading && (
          <div className="flex justify-center items-center py-10"> 
@@ -181,7 +161,6 @@ const Gorevler: React.FC = () => {
                 <AlertCircle size={20} className="mr-2 flex-shrink-0"/> 
                 <span>{error}</span> 
             </div>
-            {/* Basit yeniden deneme butonu */} 
             <Buton onClick={fetchUserMissions} size="sm" variant="ghost" className="ml-0 mt-2 sm:mt-0 sm:ml-4 text-error hover:bg-error/20"> 
                  <RefreshCw size={14} className="mr-1"/> Yeniden Dene 
             </Buton> 
@@ -204,11 +183,9 @@ const Gorevler: React.FC = () => {
       {!isLoading && !error && missions.length > 0 && ( 
         <div className="space-y-4 mt-6"> 
           {missions.map((gorev) => {
-              // Kategoriye veya ID'ye göre ikon belirle
-              const Icon = categoryIcons[gorev.required_nft_category || gorev.category || 'default'] || Zap;
-              const isLocked = !gorev.unlocked; // API'den gelen değere bak
-              const isInCooldown = gorev.unlocked && !gorev.can_complete;
-              const cooldownTimeLeft = isInCooldown ? getCooldownTimeLeft(gorev.last_completed, gorev.cooldown_hours) : null;
+              // Kategoriye göre ikon belirle
+              const Icon = categoryIcons[gorev.mission_type || gorev.category || 'default'] || Zap;
+              const isLocked = !gorev.unlocked;
               const isCompletingThis = completingMissionId === gorev.id;
 
               return (
@@ -225,43 +202,38 @@ const Gorevler: React.FC = () => {
                   </div> 
 
                   <div className="text-right ml-auto flex-shrink-0 flex flex-col sm:flex-row items-end sm:items-center w-full sm:w-auto"> 
-                      <p className={`text-lg font-bold ${isLocked || isInCooldown ? 'text-textMuted' : 'text-primary'} mr-0 sm:mr-4 mb-2 sm:mb-0`}>+{gorev.xp_reward} XP</p> 
+                      <p className={`text-lg font-bold ${isLocked ? 'text-textMuted' : 'text-primary'} mr-0 sm:mr-4 mb-2 sm:mb-0`}>+{gorev.xp_reward} XP</p> 
                       {isLocked ? (
                           <div className="flex items-center text-xs text-textMuted px-2 py-1 bg-background rounded border border-border">
                               <Lock size={14} className="mr-1.5" />
-                              {gorev.required_nft_category 
-                                ? `${getReadableCategoryName(gorev.required_nft_category)} NFT Gerekli` 
+                              {gorev.required_nft_id 
+                                ? `${getReadableCategoryName(gorev.category || null)} NFT Gerekli` 
                                 : 'Kilitli'} 
-                          </div>
-                      ) : isInCooldown ? (
-                         <div className="flex items-center text-xs text-textMuted px-2 py-1 bg-background rounded border border-border" title={`Son Tamamlama: ${gorev.last_completed ? new Date(gorev.last_completed).toLocaleString() : 'N/A'}`}>
-                              <Hourglass size={14} className="mr-1.5" />
-                              {cooldownTimeLeft ? `${cooldownTimeLeft} kaldı` : 'Cooldown'} 
                           </div>
                       ) : (
                           <Buton 
                               size="sm" 
                               variant="primary"
                               onClick={() => handleCompleteMission(gorev.id)} 
-                              disabled={isCompletingThis || !!completingMissionId} // Kendi işlemi veya başka bir işlem sürüyorsa
+                              disabled={isCompletingThis || !!completingMissionId} 
                               className="w-full sm:w-auto min-w-[140px] flex items-center justify-center"
                           >
                               {isCompletingThis ? (
                                   <Loader2 size={16} className="animate-spin mr-1.5" />
                               ) : (
-                                  <CheckCircle size={16} className="mr-1.5" />
+                                  <Swords size={16} className="mr-1.5" />
                               )}
-                              {isCompletingThis ? 'Tamamlanıyor...' : 'Görevi Tamamla'}
+                              Tamamla
                           </Buton>
-                      )} 
+                      )}
                   </div> 
-                </div> 
+                </div>
               );
-          })} 
+          })}
         </div> 
       )} 
-    </div> 
-  ); 
+    </div>
+  );
 };
 
 export default Gorevler; 

@@ -48,11 +48,32 @@ export const TelegramProvider: React.FC<{ children: ReactNode }> = ({ children }
       // WebApp ile ilgili kurulumları yap
       setIsTelegramContext(true);
       
-      // Theme parametrelerini ayarla
-      document.documentElement.style.setProperty('--tg-theme-bg-color', window.Telegram.WebApp.themeParams.bg_color || '#ffffff');
-      document.documentElement.style.setProperty('--tg-theme-text-color', window.Telegram.WebApp.themeParams.text_color || '#000000');
-      document.documentElement.style.setProperty('--tg-theme-button-color', window.Telegram.WebApp.themeParams.button_color || '#2481cc');
-      document.documentElement.style.setProperty('--tg-theme-button-text-color', window.Telegram.WebApp.themeParams.button_text_color || '#ffffff');
+      // Telegram WebApp tema parametrelerini CSS değişkenlerine uygula
+      const theme = window.Telegram.WebApp.themeParams;
+      if (theme) {
+        // Ana renkleri ayarla
+        document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-text-color', theme.text_color || '#000000');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', theme.hint_color || '#707579');
+        document.documentElement.style.setProperty('--tg-theme-link-color', theme.link_color || '#3390ec');
+        document.documentElement.style.setProperty('--tg-theme-button-color', theme.button_color || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', theme.button_text_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', theme.secondary_bg_color || '#f4f4f5');
+
+        // Karanlık tema tespiti
+        const isDarkTheme = theme.bg_color && isColorDark(theme.bg_color);
+        if (isDarkTheme) {
+          document.documentElement.classList.add('dark-theme');
+          // Karanlık tema için border ve muted renklerini güncelle
+          document.documentElement.style.setProperty('--border', 'rgba(255, 255, 255, 0.12)');
+          document.documentElement.style.setProperty('--muted', 'rgba(255, 255, 255, 0.06)');
+        } else {
+          document.documentElement.classList.remove('dark-theme');
+          // Açık tema için border ve muted renklerini güncelle
+          document.documentElement.style.setProperty('--border', 'rgba(0, 0, 0, 0.12)');
+          document.documentElement.style.setProperty('--muted', 'rgba(0, 0, 0, 0.06)');
+        }
+      }
       
       // Kullanıcı bilgisini ayarla
       if (window.Telegram.WebApp.initDataUnsafe?.user) {
@@ -71,7 +92,28 @@ export const TelegramProvider: React.FC<{ children: ReactNode }> = ({ children }
       console.warn('Telegram WebApp bulunamadı! Geliştirme modunda çalışıyor olabilirsiniz.');
       setIsTelegramContext(false);
       setIsReady(true);
+      
+      // Geliştirme modu için sistem tema tercihine göre karanlık/açık tema ayarla
+      const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDarkMode) {
+        document.documentElement.classList.add('dark-theme');
+      }
     }
+  };
+
+  // Rengin karanlık olup olmadığını kontrol et
+  const isColorDark = (hexColor: string): boolean => {
+    // Hex rengi RGB'ye dönüştür
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // Renk parlaklığını hesapla (0-255 arasında)
+    // W3C formülü: (R * 299 + G * 587 + B * 114) / 1000
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // 128'den küçük değerler karanlık olarak kabul edilir
+    return brightness < 128;
   };
 
   // Telegram User ID alma fonksiyonu
@@ -110,6 +152,21 @@ export const useTelegram = () => {
     throw new Error('useTelegram hook must be used within a TelegramProvider');
   }
   return context;
+};
+
+// useTelegramUser hook'unu güncelleyelim
+export const useTelegramUser = () => {
+  const { user } = useTelegram();
+  
+  // User ID kontrolü (üretim ve demo modları için)
+  const userId = user?.id?.toString() || import.meta.env.VITE_FALLBACK_USER_ID || 'demo123';
+  
+  return {
+    userId,
+    username: user?.username || 'demo_user',
+    firstName: user?.first_name || 'Demo Kullanıcı',
+    photoUrl: user?.photo_url || undefined
+  };
 };
 
 // WebApp fonksiyonlarını dışa aktaran yardımcı fonksiyonlar

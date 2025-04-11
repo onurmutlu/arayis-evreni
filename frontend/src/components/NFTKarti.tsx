@@ -10,6 +10,7 @@ interface NFTKartiProps {
   isBuying?: boolean;
   isClaiming?: boolean;
   isMinting?: boolean;
+  isOwned?: boolean; // NFT'nin sahibi olup olmadığı (dışarıdan belirtilebilir)
   showPrice?: boolean; // Fiyatı göster/gizle (Galeri vs Market)
   showActions?: boolean; // Butonları göster/gizle
   userStars?: number; // Kullanıcının yıldız sayısı (satın alma/claim kontrolü için)
@@ -24,6 +25,7 @@ const NFTKarti: React.FC<NFTKartiProps> = ({
   isBuying,
   isClaiming,
   isMinting,
+  isOwned = nft?.is_owned || false,
   showPrice = true,
   showActions = true,
   userStars = 0,
@@ -66,78 +68,73 @@ const NFTKarti: React.FC<NFTKartiProps> = ({
   };
 
   const renderActionButtons = () => {
-      if (!showActions) return null;
+    if (!showActions) return null;
 
-      // Claim edilebilir durumda mı? (NftClaim sayfasında)
-      if (nft.is_claimable && onClaim) {
-          const claimPrice = nft.price_stars ?? 0; // Claim maliyeti (0 veya NFT fiyatı olabilir)
-          const userCanAffordClaim = userStars >= claimPrice;
-          return (
-              <Buton
-                  size="sm"
-                  fullWidth
-                  onClick={handleClaim}
-                  disabled={isLoading || !userCanAffordClaim || disabled}
-                  isLoading={isClaiming}
-                  variant={userCanAffordClaim && !disabled ? 'secondary' : 'ghost'}
-              >
-                  {isClaiming ? 'Claim Ediliyor...' : userCanAffordClaim ? `Claim Et ${claimPrice > 0 ? `(${claimPrice} ⭐)`: ''}` : `Yetersiz Yıldız ${claimPrice > 0 ? `(${claimPrice} ⭐)`: ''}`}
-              </Buton>
-          );
+    // Dışarıdan gelen isOwned parametresi varsa, nft.is_owned yerine isOwned kullan
+    const isNftOwned = isOwned || nft.is_owned;
+
+    // Claim edilebilir durumda mı? (NftClaim sayfasında)
+    if (nft.is_claimable && onClaim) {
+        const claimPrice = nft.price_stars ?? 0; // Claim maliyeti (0 veya NFT fiyatı olabilir)
+        const userCanAffordClaim = userStars >= claimPrice;
+        return (
+            <Buton
+                size="sm"
+                fullWidth
+                onClick={handleClaim}
+                disabled={isLoading || !userCanAffordClaim || disabled}
+                isLoading={isClaiming}
+                variant={userCanAffordClaim && !disabled ? 'secondary' : 'ghost'}
+            >
+                {isClaiming ? 'Claim Ediliyor...' : userCanAffordClaim ? `Claim Et ${claimPrice > 0 ? `(${claimPrice} ⭐)`: ''}` : `Yetersiz Yıldız ${claimPrice > 0 ? `(${claimPrice} ⭐)`: ''}`}
+            </Buton>
+        );
+    }
+
+    // Satın alınabilir durumda mı? (Market sayfasında - henüz yok)
+    if (nft.is_active && !isNftOwned && onBuy) {
+         return (
+             <Buton
+                 size="sm"
+                 fullWidth
+                 onClick={handleBuy}
+                 disabled={isLoading || !canAfford || disabled}
+                 isLoading={isBuying}
+                 variant={canAfford && !disabled ? 'primary' : 'ghost'}
+             >
+                 {isBuying ? 'Alınıyor...' : canAfford ? `Satın Al (${nft.price_stars} ⭐)` : `Yetersiz Yıldız (${nft.price_stars} ⭐)`}
+             </Buton>
+         );
+    }
+     
+    // Mint edilebilir durumda mı? (Galeri veya TonWallet sayfasında)
+    if (isNftOwned && nft.mintable && onMint) {
+         return (
+             <Buton
+                 size="sm"
+                 fullWidth
+                 onClick={handleMint}
+                 disabled={isLoading || disabled}
+                 isLoading={isMinting}
+                 variant="secondary"
+             >
+                 {/* Apostrof sorununu önlemek için template literal kullanıldı */}
+                 {isMinting ? 'Mint Ediliyor...' : `Mint Et`}
+             </Buton>
+         );
+     }
+
+     // Sahip olunan ve zaten mint edilmiş
+     if (isNftOwned && nft.is_minted) {
+          return <p className="text-xs text-success text-center font-medium py-1">✅ Mint Edildi</p>
+     }
+
+     // Sahip olunan ve satın alınmış
+      if (isNftOwned) {
+          return <p className="text-xs text-secondary text-center font-medium py-1">Sahip Olunuyor</p>
       }
 
-      // Satın alınabilir durumda mı? (Market sayfasında - henüz yok)
-      if (nft.is_active && !nft.is_owned && onBuy) {
-           return (
-               <Buton
-                   size="sm"
-                   fullWidth
-                   onClick={handleBuy}
-                   disabled={isLoading || !canAfford || disabled}
-                   isLoading={isBuying}
-                   variant={canAfford && !disabled ? 'primary' : 'ghost'}
-               >
-                   {isBuying ? 'Alınıyor...' : canAfford ? `Satın Al (${nft.price_stars} ⭐)` : `Yetersiz Yıldız (${nft.price_stars} ⭐)`}
-               </Buton>
-           );
-      }
-
-       // Sahip olunan ve TON'da mint edilebilir durumda mı? (TonWallet sayfasında)
-       if (nft.is_owned && nft.mintable && !nft.is_minted && onMint) {
-           return (
-               <Buton
-                   size="sm"
-                   fullWidth
-                   onClick={handleMint}
-                   disabled={isLoading || disabled}
-                   isLoading={isMinting}
-                   variant="secondary"
-               >
-                   {/* Apostrof sorununu önlemek için template literal kullanıldı */}
-                   {isMinting ? 'Mint Ediliyor...' : `TON'da Mint Et`}
-               </Buton>
-           );
-       }
-
-       // Sahip olunan ve zaten TON'da mint edilmiş (TonWallet içinde gösterilir)
-       if (nft.is_owned && nft.is_minted && onMint) {
-            return <p className="text-xs text-success text-center font-medium py-1">✅ TON'da Mint Edildi</p>
-       }
-
-       // Sahip olunan ve claim edilmiş/satın alınmış (ama TON'da mint edilemez veya mint butonu bu context'te gösterilmiyor)
-        if (nft.is_owned && !onMint) {
-             // Mint edilmişse farklı, edilmemişse farklı etiket gösterilebilir.
-             if(nft.is_minted) {
-                return <p className="text-xs text-success text-center font-medium py-1">✅ Mint Edildi</p>
-             } else if (nft.mintable) {
-                 return <p className="text-xs text-amber-400 text-center font-medium py-1">Mint Edilebilir</p>
-             } else {
-                return <p className="text-xs text-secondary text-center font-medium py-1">Galeride</p>
-             }
-        }
-
-
-      return null; // Başka durum yoksa buton gösterme
+    return null; // Başka durum yoksa buton gösterme
   }
 
   return (
@@ -148,7 +145,7 @@ const NFTKarti: React.FC<NFTKartiProps> = ({
           {nft.name}
         </h4>
 
-        {showPrice && !nft.is_owned && (
+        {showPrice && !(isOwned || nft.is_owned) && (
              <div className="text-sm font-medium text-amber-400 mt-1">
                Fiyat: {nft.price_stars} ⭐
              </div>

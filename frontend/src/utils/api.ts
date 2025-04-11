@@ -8,7 +8,7 @@ import {
     NFTCategory, ProposalStatus, StarTransactionHistoryResponse // Enums needed for placeholders
 } from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 // --- Token Management ---
 let authToken: string | null = null;
@@ -26,8 +26,9 @@ export function getAuthToken(): string | null {
 }
 
 // --- API Call Helper ---
-async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = getAuthToken();
+    const url = `${API_BASE_URL}${endpoint}`;
     // Headers objesi oluştur
     const headers = new Headers(options.headers || {});
     // Content-Type'ı sadece body varsa veya belirtilmemişse ekle
@@ -45,8 +46,8 @@ async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<
     };
 
     try {
-        console.log(`API Call: ${options.method || 'GET'} ${API_BASE_URL}${endpoint}`); // Log the call
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        console.log(`API Call: ${options.method || 'GET'} ${url}`); // Log the call
+        const response = await fetch(url, config);
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ detail: `HTTP error! Status: ${response.status}` }));
             console.error(`API Error ${response.status} for ${endpoint}:`, errorData.detail);
@@ -79,15 +80,17 @@ export const loginWithInitData = async (initData: string): Promise<TokenResponse
 };
 
 // --- USER API ---
-export const fetchUserProfile = async (): Promise<UserProfile> => {
-    // console.warn(`API CALL: fetchUserProfile (me)`);
-    return apiCall<UserProfile>(`/me/profile`);
+export const fetchUserProfile = async (uid?: string): Promise<UserProfile> => {
+    const userId = uid || getTelegramUserIdForApi();
+    console.log(`API CALL: fetchUserProfile for ${userId}`);
+    return apiCall<UserProfile>(`/profile/${userId}`);
 };
 
-export const fetchUserWallet = async (): Promise<UserWallet> => {
-    // console.warn(`API CALL: fetchUserWallet (me)`);
-    return apiCall<UserWallet>(`/me/wallet`);
-}
+export const fetchUserWallet = async (uid?: string): Promise<any> => {
+    const userId = uid || getTelegramUserIdForApi();
+    console.log(`API CALL: fetchUserWallet for ${userId}`);
+    return apiCall<any>(`/wallet/${userId}`);
+};
 
 export const useStars = async (amount: number, reason: string): Promise<UseStarsResponse> => {
     // console.warn(`API CALL: useStars ${amount} for ${reason}`);
@@ -116,27 +119,69 @@ export const fetchInviteInfo = async (): Promise<InviteInfoResponse> => {
 
 // --- MISSIONS API ---
 export const fetchMissions = async (): Promise<Mission[]> => {
-    // console.warn(`API CALL: fetchMissions (for user)`);
-    return apiCall<Mission[]>('/missions');
+    console.log(`API CALL: fetchMissions`);
+    try {
+        const uid = getTelegramUserIdForApi();
+        const response = await apiCall<Mission[]>(`/missions/${uid}`);
+        return response;
+    } catch (error) {
+        console.error("Error fetching missions:", error);
+        throw error;
+    }
 };
 
 export const completeMission = async (missionId: number): Promise<CompleteMissionResponse> => {
-    // console.warn(`API CALL: completeMission ${missionId}`);
-    return apiCall<CompleteMissionResponse>('/gorev-tamamla', {
-        method: 'POST',
-        body: JSON.stringify({ mission_id: missionId })
-    });
+    console.log(`API CALL: completeMission ${missionId}`);
+    try {
+        const uid = getTelegramUserIdForApi();
+        const response = await apiCall<CompleteMissionResponse>(`/gorev-tamamla`, {
+            method: 'POST',
+            body: JSON.stringify({ uid, gorev_id: missionId })
+        });
+        return response;
+    } catch (error) {
+        console.error("Error completing mission:", error);
+        throw error;
+    }
 };
+
+// API istekleri için Telegram User ID'yi al
+// Context'ten veya environment'tan fallback değeri al
+function getTelegramUserIdForApi(): string {
+    // window.Telegram var mı kontrol et
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
+        return window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+    }
+    
+    // Fallback user ID
+    return import.meta.env.VITE_FALLBACK_USER_ID || "demo123";
+}
 
 // --- VIP API ---
-export const fetchVipMissions = async (): Promise<Mission[]> => {
-    //  console.warn(`API CALL: fetchVipMissions`);
-     return apiCall<Mission[]>('/vip/missions');
+export const fetchVipStatus = async (): Promise<boolean> => {
+  console.log(`API CALL: fetchVipStatus`);
+  try {
+    const uid = getTelegramUserIdForApi();
+    const response = await apiCall<{ has_vip_access: boolean }>(`/vip/status/${uid}`);
+    return response.has_vip_access;
+  } catch (error) {
+    console.error("Error fetching VIP status:", error);
+    return false;
+  }
 };
 
-export const unlockVipAccess = async (): Promise<UnlockVipResponse> => {
-    //  console.warn(`API CALL: unlockVipAccess`);
-     return apiCall<UnlockVipResponse>('/vip/unlock', { method: 'POST' });
+export const purchaseVip = async (): Promise<UnlockVipResponse> => {
+  console.log(`API CALL: purchaseVip`);
+  try {
+    const uid = getTelegramUserIdForApi();
+    return await apiCall<UnlockVipResponse>(`/vip/purchase`, {
+      method: 'POST',
+      body: JSON.stringify({ uid })
+    });
+  } catch (error) {
+    console.error("Error purchasing VIP:", error);
+    throw error;
+  }
 };
 
 // --- Leaderboard API ---
@@ -160,28 +205,22 @@ export const fetchAllNfts = async (): Promise<Nft[]> => {
 export const fetchOwnedNfts = async (): Promise<Nft[]> => {
     console.log(`API CALL: fetchOwnedNfts`);
     try {
-        return await apiCall<Nft[]>(`/me/nfts/owned`);
+        const uid = getTelegramUserIdForApi();
+        const wallet = await apiCall<any>(`/wallet/${uid}`);
+        
+        // Wallet API'den NFT ID'lerini aldık, şimdi detaylı NFT'leri alalım
+        if (!wallet || !wallet.nft_ids || wallet.nft_ids.length === 0) {
+            return [];
+        }
+        
+        // Normalde burası tüm NFT'leri alır, sonra filtrelerdi
+        // Ancak backend API değiştiğinden direkt olarak nft_ids ile döndürelim
+        const allNfts = await fetchAllNfts();
+        return allNfts.filter(nft => wallet.nft_ids.includes(nft.id.toString()));
     } catch (error) {
         console.error("Error fetching owned NFTs:", error);
-        // Fallback to wallet endpoint if necessary
-        console.warn(`Fallback: Using wallet endpoint to get NFTs`);
-        const wallet = await fetchUserWallet();
-        // This mapping is temporary and likely incorrect. Backend should ideally return full Nft details.
-        const placeholderOwnedNfts: Nft[] = wallet.nfts.map(un => ({
-             id: un.nft_id,
-             name: un.nft_name,
-             image_url: un.nft_image_url,
-             description: `Owned NFT ${un.nft_id}`, // Placeholder
-             category: NFTCategory.GENERAL, // Placeholder
-             price_stars: un.purchase_price_stars, // NFT's price or purchase price?
-             mintable: false, // Placeholder
-             is_active: false, // Placeholder
-             created_at: un.purchase_date,
-             is_owned: true,
-             is_minted: un.is_minted_on_ton || false,
-             is_claimable: false, // Owned NFTs are not claimable
-        }));
-        return placeholderOwnedNfts;
+        // Fallback to fetching all NFTs and marking owned
+        return []; // Boş liste döndür
     }
 };
 
@@ -481,4 +520,18 @@ export const adminFetchUserNFTs = async (userId: number): Promise<Nft[]> => {
       }
     ];
   }
+};
+
+export const mintNft = async (nftId: number): Promise<BuyNFTResponse> => {
+    console.log(`API CALL: mintNft ${nftId}`);
+    try {
+        const uid = getTelegramUserIdForApi();
+        return await apiCall<BuyNFTResponse>(`/mint-nft`, {
+            method: 'POST',
+            body: JSON.stringify({ uid, nft_id: nftId })
+        });
+    } catch (error) {
+        console.error("Error minting NFT:", error);
+        throw error;
+    }
 }; 

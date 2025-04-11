@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import SayfaBasligi from '../components/SayfaBasligi';
 import Buton from '../components/Buton';
 import { Gift, Star, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
-import { NFT, mockNFTData } from '../data/nftData';
+import { NFT, mockNFTData, convertToNftType } from '../data/nftData';
+import { triggerHapticFeedback, showNotification } from '../utils/hapticFeedback';
+import { claimNft, fetchClaimableNfts, fetchUserWallet } from '../utils/api';
+import { Nft } from '../types';
 
 // API yanıtı için arayüz
 interface ClaimResult {
@@ -25,6 +28,9 @@ const NftClaim: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoadingWallet, setIsLoadingWallet] = useState(true);
   const userId = 'user123'; // Simüle edilmiş kullanıcı ID'si
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedNftId, setSelectedNftId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
 
   // Başlangıçta claim edilmemiş NFT'leri ve kullanıcı yıldızını yükle
   const loadInitialData = useCallback(async () => {
@@ -65,6 +71,7 @@ const NftClaim: React.FC = () => {
     setSuccessMessage(null);
 
     try {
+      triggerHapticFeedback('medium');
       const response = await fetch(`${API_BASE_URL}/claim_nft/${userId}/${nftToClaim.id}`, {
         method: 'POST'
       });
@@ -72,7 +79,9 @@ const NftClaim: React.FC = () => {
       const resultData = await response.json(); // Yanıtı her zaman oku
 
       if (!response.ok) {
-         throw new Error(resultData.detail || `NFT claim edilemedi: ${response.status}`);
+        triggerHapticFeedback('error');
+        showNotification('error');
+        throw new Error(resultData.detail || `NFT claim edilemedi: ${response.status}`);
       }
       
       const result: ClaimResult = resultData;
@@ -82,6 +91,10 @@ const NftClaim: React.FC = () => {
       setClaimableNfts(prevNfts => prevNfts.filter(nft => nft.id !== nftToClaim.id)); // Claim edilen NFT'yi listeden çıkar
       setSuccessMessage(result.message); // Başarı mesajını göster
 
+      // Başarı feedback'i
+      triggerHapticFeedback('success');
+      showNotification('success');
+
       // Mesajı birkaç saniye sonra kaldır
       setTimeout(() => setSuccessMessage(null), 3000);
 
@@ -89,9 +102,73 @@ const NftClaim: React.FC = () => {
       console.error(`NFT ${nftToClaim.id} claim edilirken hata:`, err);
       setError(err.message || "NFT claim edilirken bir sorun oluştu.");
       // Hata mesajını da kaldırabiliriz
-       setTimeout(() => setError(null), 5000);
+      setTimeout(() => setError(null), 5000);
     } finally {
       setClaimingId(null);
+    }
+  };
+
+  // NFT talep etme fonksiyonu
+  const handleClaimNft = async (nftId: number) => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
+    setSelectedNftId(nftId.toString());
+    
+    try {
+      triggerHapticFeedback('medium');
+      const result = await claimNft(nftId);
+      
+      if (result.message) {
+        triggerHapticFeedback('success');
+        showNotification('success');
+        setToast({
+          message: "NFT başarıyla hesabınıza eklendi!",
+          type: 'success'
+        });
+        
+        // NFT listesini güncelle
+        const claimableNfts = await fetchClaimableNfts();
+        // Nft tipini NFT tipine dönüştür
+        const convertedNfts = claimableNfts.map(nft => {
+          const mockNft = mockNFTData.find(mock => mock.id === `nft-${nft.category}-${nft.id}`);
+          return mockNft || {
+            id: `nft-${nft.category}-${nft.id}`,
+            title: nft.name,
+            description: nft.description,
+            category: nft.category as any,
+            video_url: nft.video_url || '',
+            claim_cost: nft.price_stars,
+            minted: false
+          };
+        });
+        setClaimableNfts(convertedNfts);
+        
+        // Yıldız bakiyesini güncelle
+        const wallet = await fetchUserWallet();
+        setUserStars(wallet.stars);
+      } else {
+        triggerHapticFeedback('error');
+        setToast({
+          message: result.message || "NFT talep edilemedi!",
+          type: 'error'
+        });
+      }
+    } catch (error: any) {
+      console.error("NFT talep edilirken hata:", error);
+      triggerHapticFeedback('error');
+      showNotification('error');
+      
+      setToast({
+        message: error.message || "NFT talep edilirken bir hata oluştu.",
+        type: 'error'
+      });
+    } finally {
+      setIsProcessing(false);
+      setSelectedNftId(null);
+      
+      // Toast mesajını birkaç saniye sonra kaldır
+      setTimeout(() => setToast(null), 5000);
     }
   };
 

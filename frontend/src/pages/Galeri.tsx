@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import SayfaBasligi from '../components/SayfaBasligi';
 import NFTKarti from '../components/NFTKarti';
-import { Gem, Loader2, AlertCircle, Lock, Star, Info, CheckCircle } from 'lucide-react';
+import { Gem, Loader2, AlertCircle, Lock, Star, Info, CheckCircle, Crown } from 'lucide-react';
 import { mockNFTData, convertToNftType } from '../data/nftData';
-import { Nft } from '../types';
-import { fetchUserWallet, fetchUserProfile, fetchAllNfts, buyNft } from '../utils/api';
+import { Nft, NFTCategory, UserProfile } from '../types';
+import { fetchUserWallet, fetchUserProfile, fetchAllNfts, buyNft, fetchOwnedNfts, mintNft } from '../utils/api';
+import { useTelegram } from '../contexts/TelegramContext';
+import { triggerHapticFeedback, showNotification } from '../utils/hapticFeedback';
 
 // Galeride gösterilecek minimum seviye
 const MIN_LEVEL_FOR_SORA_COLLECTION = 5;
@@ -17,16 +19,18 @@ interface UserProfileData {
 
 const Galeri: React.FC = () => {
   const [nfts, setNfts] = useState<Nft[]>([]);
+  const [ownedNfts, setOwnedNfts] = useState<Nft[]>([]);
   const [mintingId, setMintingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [userStars, setUserStars] = useState<number>(0);
-  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isUserDataLoading, setIsUserDataLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const { getTelegramUserId } = useTelegram();
 
   // Başlangıçta NFT verilerini ve kullanıcı bilgilerini getir
   useEffect(() => {
-    // Tüm verileri paralel olarak yükle
     const loadData = async () => {
       setLoading(true);
       setIsUserDataLoading(true);
@@ -34,10 +38,11 @@ const Galeri: React.FC = () => {
       
       try {
         // API çağrılarını paralel olarak yap
-        const [walletData, profileData, nftsData] = await Promise.all([
+        const [walletData, profileData, nftsData, userOwnedNfts] = await Promise.all([
           fetchUserWallet(),
           fetchUserProfile(),
-          fetchAllNfts()
+          fetchAllNfts(),
+          fetchOwnedNfts()
         ]);
         
         // Kullanıcı cüzdanı verilerini ayarla
@@ -47,24 +52,28 @@ const Galeri: React.FC = () => {
         
         // Kullanıcı profili verilerini ayarla
         if (profileData) {
-          setUserProfile({
-            level: profileData.level,
-            username: profileData.username || "kullanıcı"
-          });
+          setUserProfile(profileData);
         }
         
         // NFT verilerini ayarla
         if (nftsData && nftsData.length > 0) {
           setNfts(nftsData);
+          triggerHapticFeedback('success');
         } else {
           // API'den veri alınamazsa mock veri kullanılıyor
           console.warn("API'den NFT verileri alınamadı, mock veri kullanılıyor.");
           const convertedNfts: Nft[] = mockNFTData.map(convertToNftType);
           setNfts(convertedNfts);
+          showNotification('warning', 'NFT verileri yüklenemedi, demo veriler gösteriliyor.');
         }
+        
+        // Sahip olunan NFT'leri ayarla
+        setOwnedNfts(userOwnedNfts);
       } catch (err: any) {
         console.error('Veri yüklenirken hata:', err);
         setError("Veriler yüklenemedi. Lütfen sayfayı yenileyin.");
+        triggerHapticFeedback('error');
+        showNotification('error', 'Veriler yüklenemedi. Lütfen sayfayı yenileyin.');
         
         // API çağrıları başarısız olsa bile mock veriyi göster
         const convertedNfts: Nft[] = mockNFTData.map(convertToNftType);
@@ -85,58 +94,99 @@ const Galeri: React.FC = () => {
   // Sora koleksiyonuna erişimi olup olmadığını kontrol et
   const canAccessSoraCollection = userProfile && userProfile.level >= MIN_LEVEL_FOR_SORA_COLLECTION;
 
-  // NFT satın alma işlemi
+  // NFT'leri mint etme fonksiyonu
   const handleMint = async (nftId: number) => {
-    if (mintingId) return; // Zaten bir satın alma işlemi varsa yenisini başlatma
+    if (mintingId) return; // Zaten bir mint işlemi sürüyorsa engelle
 
     setMintingId(nftId);
     setError(null);
 
-    // Seçilen NFT'nin fiyatını bul
-    const selectedNft = nfts.find(nft => nft.id === nftId);
-    if (!selectedNft) {
-      setError('NFT bulunamadı.');
-      setMintingId(null);
-      return;
-    }
-
-    // Sora koleksiyonu için seviye kontrolü
-    if (selectedNft.is_elite && !canAccessSoraCollection) {
-      setError(`Bu elit NFT'yi almak için en az Seviye ${MIN_LEVEL_FOR_SORA_COLLECTION} olmalısınız.`);
-      setMintingId(null);
-      return;
-    }
-
-    // Yeterli yıldız var mı kontrol et
-    if (userStars < selectedNft.price_stars) {
-      setError(`Bu NFT'yi almak için yeterli yıldızınız yok. Gereken: ${selectedNft.price_stars} ⭐`);
-      setMintingId(null);
-      return;
-    }
-
-    // API çağrısı yap
     try {
-      const result = await buyNft(nftId);
+      triggerHapticFeedback('medium');
+      const result = await mintNft(nftId);
       
-      // NFT'yi güncelle (satın alındı olarak işaretle)
-      setNfts(prevNfts =>
-        prevNfts.map(nft =>
-          nft.id === nftId ? { ...nft, is_owned: true } : nft
-        )
-      );
+      // Mint başarılı, sahip olunan NFT'leri güncelle
+      const updatedOwnedNfts = await fetchOwnedNfts();
+      setOwnedNfts(updatedOwnedNfts);
       
-      // Yıldızları güncelle (API'den dönen değer)
-      setUserStars(result.remaining_stars);
+      // Kullanıcının kalan yıldızlarını güncelle (varsa)
+      if (result && result.remaining_stars) {
+        setUserStars(result.remaining_stars);
+      }
       
-      // Başarı mesajı göster
-      // setSuccessMessage(result.message);
+      triggerHapticFeedback('success');
+      showNotification('success', 'NFT başarıyla mint edildi!');
+      
     } catch (err: any) {
-      console.error(`NFT satın alınırken hata:`, err);
-      setError(err.message || `NFT #${nftId} alınamadı. Lütfen tekrar deneyin.`);
+      console.error('NFT mint edilirken hata:', err);
+      setError(err.message || 'NFT mint edilirken bir hata oluştu.');
+      triggerHapticFeedback('error');
+      showNotification('error', err.message || 'NFT mint edilirken bir hata oluştu.');
     } finally {
-      setMintingId(null); // Satın alma işlemi tamamlandı
+      setMintingId(null);
     }
   };
+
+  // Mevcut NFT'yi kullanıcının sahip olup olmadığını kontrol et
+  const isNftOwned = (nftId: number) => {
+    return ownedNfts.some(nft => nft.id === nftId);
+  };
+
+  // NFT'leri kategorilerine göre gruplandır
+  const categories = React.useMemo(() => {
+    if (!nfts.length) return [];
+    
+    // Benzersiz kategorileri al
+    const uniqueCategories = Array.from(new Set(nfts.map(nft => nft.category)));
+    
+    // Kategorileri kullanıcı dostu adlara çevir
+    return uniqueCategories.map(category => {
+      const displayName = 
+        category === NFTCategory.GENERAL ? 'Genel' :
+        category === NFTCategory.SORA_VIDEO ? 'Sora Koleksiyonu' :
+        category === NFTCategory.VOTE_BASIC ? 'Temel Oylama' :
+        category === NFTCategory.VOTE_PREMIUM ? 'Premium Oylama' :
+        category === NFTCategory.VOTE_SORA ? 'Sora Oylama' : 
+        category;
+      
+      return { 
+        value: category, 
+        displayName 
+      };
+    }).sort((a, b) => {
+      // Sora Koleksiyonu en sona gelsin
+      if (a.value === NFTCategory.SORA_VIDEO) return 1;
+      if (b.value === NFTCategory.SORA_VIDEO) return -1;
+      return a.displayName.localeCompare(b.displayName);
+    });
+  }, [nfts]);
+
+  // Görüntülenecek NFT'leri filtrele
+  const filteredNfts = React.useMemo(() => {
+    // Hiç NFT yoksa boş dizi döndür
+    if (!nfts.length) return [];
+    
+    // Aktif bir kategori filtresi varsa, sadece o kategorideki NFT'leri göster
+    let filtered = activeCategory 
+      ? nfts.filter(nft => nft.category === activeCategory)
+      : nfts;
+    
+    // Sora koleksiyonu için seviye kontrolü (eğer Sora kategorisi seçildiyse)
+    if (activeCategory === NFTCategory.SORA_VIDEO && !canAccessSoraCollection) {
+      // Erişim yoksa boş dizi döndür
+      return [];
+    }
+    
+    // Varsayılan filtrede, Sora kategorisini gösterme (kullanıcının seviyesi yeterli değilse)
+    if (!activeCategory && !canAccessSoraCollection) {
+      filtered = filtered.filter(nft => nft.category !== NFTCategory.SORA_VIDEO);
+    }
+    
+    return filtered;
+  }, [nfts, activeCategory, canAccessSoraCollection]);
+
+  // Sora koleksiyonu erişim kontrolü
+  const hasSoraAccess = userProfile ? userProfile.level >= 5 : false;
 
   return (
     <div className="p-4 max-w-6xl mx-auto pb-20">
@@ -175,115 +225,103 @@ const Galeri: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Standart NFT'ler */}
-          <div className="mb-10">
-            <h2 className="text-xl font-bold mb-4 text-text flex items-center">
-              <Gem className="mr-2" size={20} />
-              Standart Koleksiyon
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {standardNfts.map((nft) => (
+          {/* Kategori filtreleri */}
+          {!loading && categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              <button
+                onClick={() => {
+                  setActiveCategory(null);
+                  triggerHapticFeedback('selection');
+                }}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  !activeCategory 
+                    ? 'bg-primary text-white' 
+                    : 'bg-muted hover:bg-muted/80 text-textSecondary'
+                }`}
+              >
+                Tümü
+              </button>
+              
+              {categories.map(category => {
+                // Sora Koleksiyonu için erişim kontrolü
+                if (category.value === NFTCategory.SORA_VIDEO && !canAccessSoraCollection) {
+                  return (
+                    <button
+                      key={category.value}
+                      className="px-3 py-1.5 rounded-full text-sm font-medium bg-muted/50 text-textMuted flex items-center cursor-not-allowed"
+                      title="Bu koleksiyonu görmek için seviye 5 olmalısınız"
+                      onClick={() => {
+                        triggerHapticFeedback('error');
+                        showNotification('warning', 'Bu koleksiyonu görmek için seviye 5 olmalısınız');
+                      }}
+                    >
+                      <Lock size={14} className="mr-1.5" />
+                      {category.displayName}
+                    </button>
+                  );
+                }
+                
+                return (
+                  <button
+                    key={category.value}
+                    onClick={() => {
+                      setActiveCategory(category.value);
+                      triggerHapticFeedback('selection');
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      activeCategory === category.value
+                        ? 'bg-primary text-white'
+                        : 'bg-muted hover:bg-muted/80 text-textSecondary'
+                    }`}
+                  >
+                    {category.displayName}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Sora Koleksiyonu kilidi */}
+          {activeCategory === NFTCategory.SORA_VIDEO && !canAccessSoraCollection && (
+            <div className="bg-muted/40 border border-border rounded-lg p-6 text-center my-8">
+              <Crown size={40} className="mx-auto mb-4 text-textSecondary" />
+              <h3 className="text-lg font-semibold mb-1">Sora Koleksiyonu Kilitli</h3>
+              <p className="text-textSecondary mb-4">
+                Bu özel koleksiyonu görmek için seviye 5'e ulaşmanız gerekiyor. Şu anki seviyeniz: {userProfile?.level || 0}
+              </p>
+              <div className="text-xs inline-block bg-background px-3 py-1.5 rounded text-textSecondary">
+                Görevleri tamamlayarak seviye atlayabilirsiniz
+              </div>
+            </div>
+          )}
+
+          {/* NFT'leri göster */}
+          {!loading && filteredNfts.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {filteredNfts.map((nft) => (
                 <NFTKarti
                   key={nft.id}
                   nft={nft}
-                  onBuy={handleMint}
-                  isBuying={mintingId === nft.id}
-                  showPrice={true}
-                  showActions={true}
+                  isOwned={isNftOwned(nft.id)}
+                  isMinting={mintingId === nft.id}
+                  onMint={() => handleMint(nft.id)}
                   userStars={userStars}
                 />
               ))}
             </div>
-          </div>
-
-          {/* Sora Özel Koleksiyonu */}
-          <div className="pt-4 border-t border-border">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
-              <div className="mb-2 sm:mb-0">
-                <h2 className="text-xl font-bold text-text flex items-center">
-                  <Star className="mr-2 text-yellow-500" size={20} />
-                  Sora Koleksiyonu (Elit)
-                </h2>
-                <p className="text-textSecondary text-sm mt-1">
-                  Özel yapay zeka tarafından oluşturulmuş nadir NFT'ler
-                </p>
-              </div>
-              
-              <div className="flex items-center text-sm px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-full border border-amber-500/20">
-                {canAccessSoraCollection ? (
-                  <>
-                    <CheckCircle size={14} className="mr-1.5" />
-                    <span>Erişiminiz var</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock size={14} className="mr-1.5" />
-                    <span>Seviye {MIN_LEVEL_FOR_SORA_COLLECTION}'te açılır</span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Bilgi Kartı */}
-            {!canAccessSoraCollection && (
-              <div className="mb-6 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg flex items-center text-sm text-amber-600">
-                <Info size={18} className="mr-2 flex-shrink-0" />
-                <p>
-                  Bu elit NFT'lere şu anda sadece göz atabilirsiniz. 
-                  <strong className="ml-1">Seviye {MIN_LEVEL_FOR_SORA_COLLECTION}'e</strong> ulaştığınızda satın alabilirsiniz. 
-                  Görevleri tamamlayarak seviyenizi yükseltebilirsiniz!
-                </p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {soraNfts.map((nft) => (
-                <div key={nft.id} className="relative group">
-                  {/* Elit NFT için parlayan çerçeve (Seviyesi yeterliyse daha parlak) */}
-                  <div 
-                    className={`absolute -inset-1 rounded-lg blur-sm opacity-50 group-hover:opacity-80 transition duration-500 group-hover:duration-200 ${
-                      canAccessSoraCollection 
-                        ? 'bg-gradient-to-r from-yellow-500 via-amber-300 to-yellow-500' 
-                        : 'bg-gradient-to-r from-gray-400 via-gray-300 to-gray-400'
-                    }`}
-                  ></div>
-                  
-                  <div className="relative">
-                    {/* Yıldız rozeti */}
-                    <div className="absolute -top-3 -right-3 z-10">
-                      <span className={`flex h-6 w-6 items-center justify-center rounded-full shadow-lg ${
-                        canAccessSoraCollection 
-                          ? 'bg-gradient-to-r from-yellow-400 to-amber-400' 
-                          : 'bg-gradient-to-r from-gray-400 to-gray-500'
-                      }`}>
-                        <Star size={12} className="text-white" />
-                      </span>
-                    </div>
-                    
-                    {/* Seviye kilidi (eğer gerekli seviyede değilse) */}
-                    {!canAccessSoraCollection && (
-                      <div className="absolute inset-0 bg-black/50 z-10 flex flex-col items-center justify-center rounded-lg text-white backdrop-blur-[1px]">
-                        <Lock size={28} className="mb-2 text-amber-400" />
-                        <p className="text-center font-semibold text-sm px-2">
-                          Seviye {MIN_LEVEL_FOR_SORA_COLLECTION}'te kilit açılır
-                        </p>
-                      </div>
-                    )}
-                    
-                    <NFTKarti
-                      nft={nft}
-                      onBuy={handleMint}
-                      isBuying={mintingId === nft.id}
-                      showPrice={true}
-                      showActions={true}
-                      userStars={userStars}
-                      disabled={!canAccessSoraCollection} // Seviyesi yeterli değilse buton devre dışı
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
+          
+          {/* Hiç NFT yoksa */}
+          {!loading && !error && filteredNfts.length === 0 && !activeCategory && (
+            <p className="text-center text-textSecondary mt-8">Henüz NFT bulunamadı.</p>
+          )}
+          
+          {/* Seçili kategoride NFT yoksa */}
+          {!loading && !error && filteredNfts.length === 0 && activeCategory && (
+            <p className="text-center text-textSecondary mt-8">
+              Bu kategoride NFT bulunamadı.
+            </p>
+          )}
         </>
       )}
     </div>

@@ -44,20 +44,13 @@ app = FastAPI(
 )
 
 # CORS Ayarları - Frontend'den gelen isteklere izin vermek için
-# İzin verilecek orijinleri ortam değişkenlerinden al
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
-
-# Production URL'i varsa ekle
-PRODUCTION_URL = os.getenv("PRODUCTION_URL")
-if PRODUCTION_URL:
-    ALLOWED_ORIGINS.append(PRODUCTION_URL)
-
+# Geliştirme aşamasında tüm kaynaklardan gelen isteklere izin ver
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],  # Tüm kaynaklardan gelen isteklere izin ver
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Tüm HTTP metodlarına izin ver
+    allow_headers=["*"],  # Tüm headerlara izin ver
 )
 
 # --- Router'ları Uygulamaya Dahil Etme ---

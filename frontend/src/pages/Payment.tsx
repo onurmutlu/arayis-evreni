@@ -92,21 +92,6 @@ const Payment: React.FC = () => {
     }
   };
 
-  // Stars ekleme API çağrısı
-  const addStarsToUser = async (amount: number) => {
-    try {
-      console.log(`${amount} Stars kullanıcıya ekleniyor...`);
-      // Gerçek API çağrısı - kullanıcı ID'si ve neden ekliyoruz
-      await adminGrantStars(1, amount, 'payment');
-      console.log(`${amount} Stars başarıyla eklendi!`);
-      setPaymentStatus('success');
-    } catch (err) {
-      console.error('Stars eklenirken hata oluştu:', err);
-      setPaymentStatus('failed');
-      setErrorMessage('Stars eklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
-    }
-  };
-
   // Ödeme simülasyonu
   const simulatePayment = () => {
     setPaymentStatus('waiting');
@@ -117,7 +102,25 @@ const Payment: React.FC = () => {
       if (Math.random() < 0.8) {
         // Başarılı ödeme
         setPaymentStatus('success');
-        addStarsToUser(selectedAmount);
+        // Doğrudan burada seçilen miktarı kullanıyoruz, addStarsToUser fonksiyonunu çağırmak yerine
+        try {
+          console.log(`${selectedAmount} Stars kullanıcıya ekleniyor...`);
+          // Gerçek API çağrısını burada yapıyoruz
+          adminGrantStars(1, selectedAmount, 'payment')
+            .then(() => {
+              console.log(`${selectedAmount} Stars başarıyla eklendi!`);
+              setPaymentStatus('success');
+            })
+            .catch((err) => {
+              console.error('Stars eklenirken hata oluştu:', err);
+              setPaymentStatus('failed');
+              setErrorMessage('Stars eklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+            });
+        } catch (err) {
+          console.error('Stars eklenirken hata oluştu:', err);
+          setPaymentStatus('failed');
+          setErrorMessage('Stars eklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+        }
       } else {
         // Başarısız ödeme
         setPaymentStatus('failed');

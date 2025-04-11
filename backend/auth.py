@@ -26,6 +26,9 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login/token") # Token URL'i (gerçek değil, sadece şema için)
 
+# Geliştirme için varsayılan Telegram ID
+DEV_FALLBACK_TELEGRAM_ID = int(os.getenv("DEV_FALLBACK_TELEGRAM_ID", "12345678")) # Frontend'deki VITE_FALLBACK_USER_ID ile aynı olmalı
+
 def validate_init_data(init_data: str, bot_token: str = BOT_TOKEN) -> Optional[schemas.InitData]:
     """Validates the initData string from Telegram WebApp."""
     if not bot_token:
@@ -94,12 +97,33 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.User:
-    """Dependency to get the current user from JWT token."""
+    """Dependency to get the current user from JWT token.
+       DEVELOPMENT MODE: If token is 'fake-dev-token-123', returns the fallback user.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    # --- DEVELOPMENT MODE OVERRIDE ---
+    if token == "fake-dev-token-123":
+        print("--- DEVELOPMENT: Using fallback user --- ")
+        user = crud.get_user_by_telegram_id(db, telegram_id=DEV_FALLBACK_TELEGRAM_ID)
+        if user is None:
+            print(f"--- DEVELOPMENT: Fallback user {DEV_FALLBACK_TELEGRAM_ID} not found, creating... ---")
+            # Geliştirme kullanıcısını basitçe oluştur (gerçek user şeması farklı olabilir)
+            dev_user_data = schemas.UserCreate(telegram_id=DEV_FALLBACK_TELEGRAM_ID, username="dev_tester")
+            user = crud.create_user(db=db, user=dev_user_data)
+            if user:
+                print(f"--- DEVELOPMENT: Created fallback user {DEV_FALLBACK_TELEGRAM_ID} ---")
+            else:
+                print(f"--- DEVELOPMENT: Failed to create fallback user {DEV_FALLBACK_TELEGRAM_ID} ---")
+                raise HTTPException(status_code=500, detail="Could not create dev fallback user")
+        return user
+    # --- END DEVELOPMENT MODE OVERRIDE ---
+
+    # Normal Token Validation
     if not SECRET_KEY:
          print("CRITICAL ERROR: SECRET_KEY is not set for JWT validation!")
          raise credentials_exception # Veya 500 Internal Server Error
@@ -112,13 +136,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         telegram_id = int(telegram_id_str) # Integer'a çevir
         token_data = schemas.TokenData(telegram_id=telegram_id)
     except JWTError:
+        print("JWTError during token decode") # Debug
         raise credentials_exception
     except (ValidationError, ValueError):
+         print("ValidationError or ValueError during token processing") # Debug
          raise credentials_exception
 
     user = crud.get_user_by_telegram_id(db, telegram_id=token_data.telegram_id)
     if user is None:
         # Kullanıcı token'da var ama DB'de yoksa (silinmiş olabilir)
+        print(f"User with telegram_id {token_data.telegram_id} from token not found in DB") # Debug
         raise credentials_exception
     return user
 

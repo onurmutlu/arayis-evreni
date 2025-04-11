@@ -6,6 +6,11 @@ from sqlalchemy.sql import func
 import enum
 from database import Base
 
+# Yıldız işlemi türleri için enum
+class TransactionType(str, enum.Enum):
+    CREDIT = "credit"  # Yıldız kazanma
+    DEBIT = "debit"    # Yıldız harcama
+
 class User(Base):
     __tablename__ = "users"
 
@@ -204,4 +209,18 @@ class MissionStoryLog(Base):
     story_text = Column(String, nullable=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     user = relationship("User", back_populates="mission_stories")
-    mission = relationship("Mission") 
+    mission = relationship("Mission")
+
+# Yıldız işlemlerini takip eden yeni tablo
+class StarTransaction(Base):
+    __tablename__ = "star_transactions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    amount = Column(Integer, nullable=False)  # Pozitif/negatif miktar
+    transaction_type = Column(SQLEnum(TransactionType), nullable=False)
+    reason = Column(String, nullable=False)  # İşlem nedeni (örn: nft_purchase, daily_bonus)
+    description = Column(String, nullable=True)  # İlave açıklama
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    user = relationship("User", backref="star_transactions")

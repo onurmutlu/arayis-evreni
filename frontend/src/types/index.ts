@@ -61,6 +61,10 @@ export interface Mission {
   is_completed?: boolean;
   last_completed_at?: string;
   is_on_cooldown?: boolean;
+  unlocked?: boolean; // Kullanıcı için erişilebilir mi
+  category?: string; // Kategori bilgisi (ikonlar için)
+  last_completed?: string; // Cooldown hesaplaması için
+  can_complete?: boolean; // Cooldown doldu mu/tamamlanabilir mi
 }
 
 export interface UserMission {
@@ -185,6 +189,11 @@ export interface CompleteMissionResponse {
     earned_badge?: Badge;
     streak_bonus_xp?: number;
     story_generated?: string;
+    xp_gained?: number; // API'den dönen toplam kazanılan XP
+    streak?: number; // Kullanıcının güncel görev serisi
+    level_up?: boolean; // Seviye atladı mı
+    current_xp?: number; // Güncel XP
+    current_level?: number; // Güncel seviye
 }
 
 export interface BuyNFTResponse {

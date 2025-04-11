@@ -3,13 +3,13 @@
 // import viteLogo from '/vite.svg'
 // import './App.css'
 import React, { useEffect, useState } from 'react';
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+// import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { loginWithInitData, setAuthToken, getAuthToken, fetchUserProfile, fetchUserWallet } from './utils/api';
 import { TelegramProvider, useTelegram, TelegramUser } from './contexts/TelegramContext';
 
 // Router import'u
 import AppRouter from './router';
-const router = createBrowserRouter([{ path: "*", element: <AppRouter /> }]);
+// const router = createBrowserRouter([{ path: "*", element: <AppRouter /> }]);
 
 // Global Telegram tipini tanımla
 declare global {
@@ -247,7 +247,7 @@ const AppContent: React.FC = () => {
         </div>
       )}
       
-      <RouterProvider router={router} />
+      <AppRouter />
     </>
   );
 };
