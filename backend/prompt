@@ -1,0 +1,80 @@
+şimdi front-end oluşturalım halihazırdaki yapıda cors hataları ve muhtemelen bundan kaynaklı css göstermeme stil sorunu vs. vardı çalışmıyordu, ve reference error'lar veriyordu seninle daha önce beraber yaptığımız 
+@https://github.com/onurmutlu/onlyvips/tree/main/miniapp 
+düzgün çalışıyor oradan ilham alabilirsin.
+Sen artık Arayış Evreni projesinin frontend geliştiricisisin.
+
+Arayış Evreni, görev yaparak XP ve rozet kazanılan, Telegram MiniApp olarak çalışan, ajanlık temalı bir sosyal Web3 oyunudur. React (Vite) + UnoCSS kullanılıyor. Backend API hazır ve entegre, MiniApp projesi Vercel'de barındırılıyor. Telegram WebApp JS API de entegre edildi. Şu anda uygulamanın arayüzü tamamlanmak üzere ama eksiklikler var.
+
+Lütfen aşağıdaki işleri sırayla yap:
+
+---
+
+### 1. GÖREV LİSTESİ
+- Görevler `/tasks/list` endpoint'inden dinamik olarak geliyor.
+- Görev kartlarını **mobil uyumlu**, **VIP dark temaya uygun**, **ikonlu** ve **XP/rozet bilgisi içeren** şekilde göster.
+- Görev tamamlandığında konfeti animasyonu, yıldız/XP/rozet kazanımı gibi görsel geri bildirimler eklensin.
+
+---
+
+### 2. KULLANICI PROFİLİ
+- `/profile/{user_id}` endpoint'i ile kullanıcı bilgisi çekiliyor.
+- XP, rozetler ve ajanlık seviyesi gösterilecek şekilde profili düzenle.
+- Kullanıcının kazandığı rozetleri görsel olarak grid şeklinde sun.
+- Kullanıcının konumu frontend'de gösterilmeyecek, ama `POST /location/report` ile backend'e gönderiliyor. Bu kısımda görsel öğe olmayacak.
+
+---
+
+### 3. GÖREV TAMAMLAMA
+- Kullanıcı "Görevi Tamamla" butonuna bastığında:
+  - `/task/complete` endpoint'ine görev ID gönder.
+  - Sunucu response verdikten sonra UI'da XP, rozet ve başarı animasyonu göster.
+  - Görev durumu "tamamlandı" olarak işaretlensin.
+
+---
+
+### 4. VIP DARK TEMA & TASARIM
+- UnoCSS ile şık, karanlık ve elit bir görünüm kullanılmalı.
+- Responsive tasarım: Tüm ekran çözünürlüklerinde düzgün çalışmalı.
+- `App.tsx`, `Home.tsx`, `Profile.tsx`, `TaskList.tsx` gibi bölümler fonksiyonel ve sade olmalı.
+- `uno.css` dosyası yüklenmiş ve Vite'a tanımlanmış olmalı.
+
+---
+
+### 5. ANİMASYONLAR & GÖRSELLER
+- XP kazanımı sonrası yıldız patlaması veya konfeti efekti ekle.
+- Her rozetin PNG görseli `/public/badge.png` veya benzeri olacak şekilde yüklü.
+- Görevler ikonlarla temsil edilsin (örneğin: DM, davet, paylaşım gibi)
+
+---
+
+### 6. TEKNİK DETAYLAR
+- VITE_API_URL ile API adresi `.env` üzerinden alınmalı.
+- Uygulama Vercel üzerinden deploy ediliyor.
+- Telegram WebApp hazır (`window.Telegram.WebApp`) → `ready()` ve `expand()` çağrısı yapılmalı.
+
+---
+
+### 7. HATA YÖNETİMİ
+- API hataları düzgün yakalanmalı.
+- Kullanıcıya sade bir hata mesajı gösterilmeli.
+- Loading spinners ve boş liste durumları unutulmamalı.
+
+---
+
+### 8. BONUS (varsa vakit kalırsa)
+- Görevler arasına "gizli görev" ekle, ajanlık hissi versin.
+- Bir görev “sürpriz ödül” içeriyorsa bunu yıldızla veya animasyonla belirt.
+- Görevlerin bazıları zamanlıysa (örneğin: 3 saat içinde yapılmalı), countdown timer eklensin.
+
+---
+
+## Hedef
+Frontend, 3 saat içinde yayına alınacak şekilde tamamlanmalı. Her şey eksiksiz ve sade, ama estetik ve mobil odaklı olmalı. Showcu, içerik satışı veya dış ödeme gibi kavramlar yok. Her şey **ajanlık teması**, **XP**, **rozet**, **görev**, ve **oyunlaştırma** üzerine kuruludur.
+
+MiniApp klasörü: `/arayis-evreni/frontend`  
+Backend API: `https://ae-api.siyahkare.com`  
+Frontend: `https://arayis-evreni.siyahkare.com`
+
+---
+
+Projenin şu anki halini oku, eksikleri tamamla, UI’yi finalize et ve Vercel’e deploy edilebilecek hale getir. Geliştirme tamamlandığında `.env`, `vite.config.ts`, `App.tsx`, `main.tsx`, `components/`, `pages/` klasörleri eksiksiz çalışıyor olmalı.

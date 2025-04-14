@@ -1,13 +1,23 @@
 import React from 'react';
 import { Mission } from '../types';
 import Buton from './Buton';
-import { Lock, Gem, Nfc, Clock, CheckCircle, ArrowRight, Star } from 'lucide-react'; // İkonlar (Star eklendi)
+import { Lock, Gem, Nfc, Clock, CheckCircle, ArrowRight, Star, Award, Badge, Heart, ShieldCheck, Building, Swords, Zap, AlertTriangle, Info } from 'lucide-react';
 
 interface GorevKartiProps {
   mission: Mission;
   onComplete: (missionId: number) => void;
   isCompleting: boolean;
 }
+
+// Görev kategorilerine göre ikon belirle
+const categoryIcons: Record<string, React.ElementType> = {
+  flirt: Heart,
+  dao: ShieldCheck,
+  guardian: Swords,
+  city: Building,
+  general: Info,
+  default: Zap
+};
 
 // Cooldown süresini okunabilir formata çeviren yardımcı fonksiyon
 const formatCooldown = (endDateStr?: string): string => {
@@ -43,6 +53,9 @@ const GorevKarti: React.FC<GorevKartiProps> = ({ mission, onComplete, isCompleti
   const cooldownEndTime = mission.is_on_cooldown && mission.last_completed_at
       ? new Date(new Date(mission.last_completed_at).getTime() + (mission.cooldown_hours || 0) * 3600 * 1000).toISOString()
       : undefined;
+      
+  // Kategori ikonunu belirle
+  const CategoryIcon = categoryIcons[mission.category || mission.mission_type || 'default'] || Zap;
 
   const handleCompleteClick = () => {
     if (!isLocked && !isCompleting) {
@@ -58,24 +71,43 @@ const GorevKarti: React.FC<GorevKartiProps> = ({ mission, onComplete, isCompleti
     >
       <div>
         {/* Görev Başlığı ve Özel Durum İkonları */} 
-        <h3 className="text-lg font-semibold text-text mb-2 flex items-center justify-between"> 
-           <span className="truncate mr-2">{mission.title}</span> 
-           <div className="flex items-center space-x-1.5 flex-shrink-0"> 
-              {mission.is_vip && <Gem size={16} className="text-amber-400" aria-label="VIP Görev"/>} 
-              {mission.required_nft_id && <Nfc size={16} className="text-cyan-400" aria-label={`Gereken NFT: ${mission.required_nft_name || mission.required_nft_id}`}/>} 
-           </div> 
-        </h3> 
-        <p className="text-sm text-textSecondary mb-3 line-clamp-2 min-h-[40px]">{mission.description}</p> {/* Min yükseklik */}
+        <div className="flex items-start gap-3 mb-3">
+          <div className={`p-2 rounded-lg bg-primary/10 ${isLocked ? 'opacity-50' : ''}`}>
+            <CategoryIcon size={20} className="text-primary" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-md font-semibold text-text truncate" title={mission.title}>{mission.title}</h3>
+              <div className="flex items-center gap-1.5 flex-shrink-0"> 
+                {mission.is_vip && <Gem size={16} className="text-amber-400" aria-label="VIP Görev"/>} 
+                {mission.required_nft_id && <Nfc size={16} className="text-cyan-400" aria-label="NFT Gerekli"/>} 
+              </div>
+            </div>
+            <p className="text-sm text-textSecondary line-clamp-2 mt-1">{mission.description}</p>
+          </div>
+        </div>
       </div>
 
       {/* Ödül ve Durum */} 
       <div className="mt-auto pt-3 border-t border-white/5"> {/* Üst çizgi */} 
           <div className="flex justify-between items-center text-sm mb-4"> 
-            {/* Ödül */} 
-            <span className="font-semibold text-primary flex items-center"> 
-                <Star size={14} className="mr-1 fill-primary text-primary"/> 
-                +{mission.xp_reward} XP 
-            </span> 
+            {/* Ödüller */}
+            <div className="flex items-center gap-3">
+              {/* XP ödülü */}
+              <span className="font-semibold text-primary flex items-center"> 
+                <Star size={16} className="mr-1 fill-primary text-primary"/> 
+                <span>{mission.xp_reward} XP</span>
+              </span> 
+              
+              {/* Rozet ödülü (varsa) */}
+              {mission.badge_reward && (
+                <span className="font-semibold text-amber-400 flex items-center"> 
+                  <Award size={16} className="mr-1"/> 
+                  <span>Rozet</span>
+                </span>
+              )}
+            </div>
+            
             {/* Durum Göstergesi */} 
             {isLocked && mission.is_completed && mission.cooldown_hours === 0 && ( 
                 <span className="text-xs text-success flex items-center"><CheckCircle size={14} className="mr-1"/>Tamamlandı</span> 
@@ -85,19 +117,19 @@ const GorevKarti: React.FC<GorevKartiProps> = ({ mission, onComplete, isCompleti
             )} 
              {/* Kilitli değilse ve tamamlanmamışsa boşluk bırak veya başka bir şey göster */} 
             {!isLocked && (
-                 <span className="text-xs text-gray-500">Yapılabilir</span>
+                 <span className="text-xs text-success flex items-center"><Badge size={14} className="mr-1" />Yapılabilir</span>
             )}
           </div> 
 
           {/* Tamamlama Butonu */} 
           <Buton 
             fullWidth 
-            variant="primary" 
+            variant={isLocked ? "secondary" : "primary"}
             onClick={handleCompleteClick} 
             isLoading={isCompleting} 
             disabled={isLocked || isCompleting} 
             size="sm" 
-            className={`transition-opacity ${isLocked ? 'opacity-50 cursor-not-allowed bg-gray-600 hover:bg-gray-600' : 'hover:brightness-110'}`} // Kilitli stil
+            className={`transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110'}`} // Kilitli stil
           > 
             {isCompleting ? 'Doğrulanıyor...' : (isLocked ? 'Beklemede' : 'Görevi Tamamla')} {/* Metin güncellendi */} 
              {!isLocked && !isCompleting && <ArrowRight size={16} className="ml-1"/>} 

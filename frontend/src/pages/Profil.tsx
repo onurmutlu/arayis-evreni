@@ -248,151 +248,172 @@ const Profil: React.FC = () => {
                   className="w-full h-full rounded-full object-cover" 
                 />
               ) : (
-                <User size={32} />
+                <User size={24} />
               )}
             </div>
             <div className="ml-4">
-              <h2 className="text-xl font-bold">
-                {user?.first_name || profileData.username || "Kullanıcı"}
+              <h2 className="text-xl font-bold text-text">
+                {profileData.username || user?.first_name || "Misafir"}
               </h2>
-              <p className="text-textSecondary text-sm">
-                UID: {profileData.telegram_id || getTelegramUserId()}
-              </p>
+              <div className="flex items-center">
+                <span className={`text-sm ${getUserRole(profileData.level).color}`}>
+                  {getUserRole(profileData.level).name}
+                </span>
+                <span className="mx-2 text-textMuted">•</span>
+                <span className="text-sm text-textSecondary">
+                  Seviye {profileData.level}
+                </span>
+              </div>
             </div>
           </div>
           
-          {/* XP Bar */}
+          {/* XP Progress Bar */}
           <div className="mb-6">
-            <div className="flex justify-between mb-1">
-              <span className="text-lg font-semibold flex items-center">
-                Seviye {profileData.level}
-                <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
-                  {profileData.xp} XP
-                </span>
-              </span>
-              <span className="text-sm text-textSecondary">
-                Sonraki seviye: {nextLevelXp} XP
-              </span>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-textSecondary">XP: {profileData.xp}</span>
+              <span className="text-sm text-textSecondary">Sonraki seviye: {nextLevelXp}</span>
             </div>
             <XPBar progress={progress} />
           </div>
           
-          {/* Streak ve rozetler */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
-            {/* Streak bilgisi */}
-            <div className="bg-muted/40 p-4 rounded-lg flex items-center">
-              <div className="bg-secondary/10 rounded-full w-10 h-10 flex items-center justify-center text-secondary mr-4">
-                <Star size={20} />
-              </div>
-              <div>
-                <h3 className="font-medium">Görev Serisi</h3>
-                <p className="text-2xl font-bold">{profileData.mission_streak || 0} gün</p>
-              </div>
+          {/* Stars Balance */}
+          {profileData.stars_enabled && (
+            <div className="mb-6">
+              <StarsBalance balance={profileData.stars} className="justify-start" />
+            </div>
+          )}
+          
+          {/* İstatistikler */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+            <div className="bg-surface border border-border/20 rounded-lg p-3 text-center">
+              <Activity size={18} className="text-purple-400 mx-auto mb-1" />
+              <p className="text-xs text-textSecondary mb-1">Görev Serisi</p>
+              <p className="text-lg font-semibold text-text">{profileData.mission_streak || 0}</p>
             </div>
             
-            {/* Rozet sayısı */}
-            <div className="bg-muted/40 p-4 rounded-lg flex items-center">
-              <div className="bg-amber-500/10 rounded-full w-10 h-10 flex items-center justify-center text-amber-500 mr-4">
-                <Award size={20} />
-              </div>
-              <div>
-                <h3 className="font-medium">Rozetler</h3>
-                <p className="text-2xl font-bold">{profileData.badges?.length || 0} adet</p>
-              </div>
+            <div className="bg-surface border border-border/20 rounded-lg p-3 text-center">
+              <Users size={18} className="text-blue-400 mx-auto mb-1" />
+              <p className="text-xs text-textSecondary mb-1">Davet Ettiğin</p>
+              <p className="text-lg font-semibold text-text">{profileData.invited_users_count || 0}</p>
+            </div>
+            
+            <div className="bg-surface border border-border/20 rounded-lg p-3 text-center">
+              <Award size={18} className="text-amber-400 mx-auto mb-1" />
+              <p className="text-xs text-textSecondary mb-1">Rozetler</p>
+              <p className="text-lg font-semibold text-text">{profileData.badges?.length || 0}</p>
             </div>
           </div>
         </div>
       </div>
       
       {/* Rozetler */}
-      {profileData.badges && profileData.badges.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 flex items-center">
-            <Award size={18} className="mr-2 text-amber-500" />
-            Kazanılan Rozetler
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {profileData.badges.map((badge, index) => (
-              <div key={index} className="bg-surface p-3 rounded-lg flex flex-col items-center text-center">
-                <div className="w-14 h-14 mb-2">
-                  {badge.badge_image_url ? (
-                    <img 
-                      src={badge.badge_image_url} 
-                      alt={badge.badge_name} 
-                      className="w-full h-full object-contain" 
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-amber-500/10 rounded-full flex items-center justify-center">
-                      <Award size={24} className="text-amber-500" />
-                    </div>
-                  )}
-                </div>
-                <h4 className="font-medium text-sm mb-1">{badge.badge_name}</h4>
-                <p className="text-textSecondary text-xs">
-                  {new Date(badge.earned_at).toLocaleDateString()}
-                </p>
+      <div className="bg-surface rounded-lg shadow-lg overflow-hidden mb-6">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-text flex items-center">
+              <Badge size={18} className="text-primary mr-2" />
+              Kazanılan Rozetler
+            </h3>
+            {profileData.badges && profileData.badges.length > 0 && (
+              <span className="text-sm text-textSecondary">{profileData.badges.length} rozet</span>
+            )}
+          </div>
+          
+          {profileData.badges && profileData.badges.length > 0 ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 justify-items-center">
+              {profileData.badges.map((badge) => (
+                <RozetKarti key={badge.badge_id} badge={badge} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-textSecondary border border-dashed border-border rounded-lg">
+              <Badge size={32} className="mx-auto mb-2 opacity-30" />
+              <p>Henüz rozet kazanmadın</p>
+              <p className="text-sm mt-1">Görevleri tamamlayarak rozetler kazanabilirsin</p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Davet linki (sadece Telegram bağlamında) */}
+      {isTelegramContext && (
+        <div className="bg-surface rounded-lg shadow-lg overflow-hidden mb-6">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-text flex items-center mb-4">
+              <Share2 size={18} className="text-primary mr-2" />
+              Arkadaşlarını Davet Et
+            </h3>
+            
+            {inviteLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="animate-spin text-primary" size={24} />
               </div>
-            ))}
+            ) : inviteInfo ? (
+              <div>
+                <p className="text-sm text-textSecondary mb-3">
+                  Davet ettiğin her arkadaş için {inviteInfo.reward_per_invite_stars} Stars kazanırsın.
+                </p>
+                
+                {/* Davet linki */}
+                <div className="flex items-center bg-background rounded-lg border border-border p-2 mb-4 overflow-hidden">
+                  <input 
+                    type="text" 
+                    value={inviteInfo.invite_link}
+                    readOnly
+                    className="bg-transparent border-none outline-none text-sm flex-grow text-textSecondary px-2 truncate"
+                  />
+                  <Buton 
+                    onClick={copyInviteLink} 
+                    variant="ghost" 
+                    size="sm"
+                    className="flex-shrink-0 ml-2 relative"
+                  >
+                    {linkCopied ? (
+                      <Check size={16} className="text-success" />
+                    ) : (
+                      <Copy size={16} />
+                    )}
+                  </Buton>
+                </div>
+                
+                {/* Davet bilgisi */}
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-textSecondary">Toplam başarılı davet: {inviteInfo.successful_invites}</span>
+                  <Buton onClick={refreshInviteInfo} size="sm" variant="ghost" className="text-primary">
+                    <RefreshCcw size={14} className="mr-1"/>
+                    Yenile
+                  </Buton>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-textSecondary">
+                <p>Davet bilgisi yüklenemedi.</p>
+                <Buton onClick={refreshInviteInfo} size="sm" variant="ghost" className="mt-2">
+                  <RefreshCcw size={14} className="mr-1"/>
+                  Tekrar Dene
+                </Buton>
+              </div>
+            )}
           </div>
         </div>
       )}
       
-      {/* Davet kartı */}
-      <div className="bg-surface rounded-lg shadow-lg overflow-hidden mb-6">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <Users size={20} className="mr-2" />
-              Davet Sistemi
-            </h3>
-            <Buton
-              onClick={refreshInviteInfo}
-              variant="ghost"
-              size="sm"
-              disabled={inviteLoading}
-            >
-              {inviteLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <RefreshCcw size={16} />
-              )}
-            </Buton>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-textSecondary">Başarılı Davetler</span>
-              <span className="font-semibold">{inviteInfo?.successful_invites || 0}</span>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={inviteInfo?.invite_link || ''}
-                readOnly
-                className="flex-1 p-2 bg-background border border-border rounded text-sm"
-              />
-              <Buton
-                onClick={copyInviteLink}
-                variant="primary"
-                size="sm"
-                className="min-w-[100px]"
-              >
-                {linkCopied ? (
-                  <>
-                    <CheckCircle size={16} className="mr-1" />
-                    Kopyalandı
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} className="mr-1" />
-                    Kopyala
-                  </>
-                )}
-              </Buton>
-            </div>
+      {/* Tamamlanan görevlerin hikayesi - Yakında */}
+      <div className="bg-surface/50 border border-primary/10 rounded-lg p-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 m-4">
+          <div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+            Yakında
           </div>
         </div>
+        
+        <h3 className="text-lg font-semibold text-text flex items-center mb-4">
+          <Swords size={18} className="text-primary mr-2" />
+          Görev Hikayen
+        </h3>
+        
+        <p className="text-sm text-textSecondary">
+          Tamamladığın görevler burada bir hikaye olarak görüntülenecek.
+        </p>
       </div>
     </div>
   );

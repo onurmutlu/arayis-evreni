@@ -11,6 +11,8 @@ import { useTelegram } from '../contexts/TelegramContext';
 import { fetchMissions, completeMission } from '../utils/api';
 import { Mission, CompleteMissionResponse } from '../types';
 import { triggerHapticFeedback, showNotification } from '../utils/hapticFeedback';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 
 // Kategori ikonları
 const categoryIcons: Record<string, React.ElementType> = {
@@ -30,6 +32,8 @@ const Gorevler: React.FC = () => {
   const [completingMissionId, setCompletingMissionId] = useState<number | null>(null);
   const [completionStatus, setCompletionStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [xpAnimation, setXpAnimation] = useState<{ amount: number, visible: boolean }>({ amount: 0, visible: false });
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { width, height } = useWindowSize();
 
   // Görevleri fetch eden fonksiyon
   const fetchUserMissions = async () => {
@@ -64,6 +68,12 @@ const Gorevler: React.FC = () => {
       triggerHapticFeedback('medium');
       const result = await completeMission(missionId);
       
+      // Konfeti animasyonu göster
+      setShowConfetti(true);
+      setTimeout(() => {
+        setShowConfetti(false);
+      }, 4000);
+      
       // XP animasyonu göster
       if (result.xp_gained && result.xp_gained > 0) {
         setXpAnimation({ 
@@ -80,7 +90,7 @@ const Gorevler: React.FC = () => {
       showNotification('success');
       
       setCompletionStatus({ 
-        message: `Görev tamamlandı! +${result.xp_gained || result.new_xp} XP kazandın!${result.level_up ? ' ✨ Seviye atladın!' : ''}`, 
+        message: `Görev tamamlandı! +${result.xp_gained || result.new_xp} XP kazandın!${result.level_up ? ' ✨ Seviye atladın!' : ''}${result.earned_badge ? ' 🏆 Yeni rozet kazandın!' : ''}`, 
         type: 'success' 
       });
 
@@ -137,10 +147,21 @@ const Gorevler: React.FC = () => {
     <div className="p-4 max-w-4xl mx-auto pb-20">
       <SayfaBasligi title="Aktif Görevler" icon={Swords} />
 
+      {/* Konfeti Animasyonu */}
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.2}
+        />
+      )}
+
       {/* XP Animasyonu */}
       {xpAnimation.visible && (
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className="text-3xl font-bold text-primary animate-bounce-up-and-fade">
+          <div className="text-4xl font-bold text-primary animate-bounce-up-and-fade">
             +{xpAnimation.amount} XP
           </div>
         </div>

@@ -535,3 +535,17 @@ export const mintNft = async (nftId: number): Promise<BuyNFTResponse> => {
         throw error;
     }
 }; 
+
+// --- Lokasyon API ---
+export const reportUserLocation = async (lat: number, lng: number): Promise<{ success: boolean }> => {
+  console.log(`API CALL: reportUserLocation ${lat}, ${lng}`);
+  try {
+    return await apiCall<{ success: boolean }>(`/location/report`, {
+      method: 'POST',
+      body: JSON.stringify({ latitude: lat, longitude: lng })
+    });
+  } catch (error) {
+    console.error("Error reporting user location:", error);
+    return { success: false };
+  }
+}; 

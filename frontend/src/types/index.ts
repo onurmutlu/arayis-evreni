@@ -65,6 +65,7 @@ export interface Mission {
   category?: string; // Kategori bilgisi (ikonlar için)
   last_completed?: string; // Cooldown hesaplaması için
   can_complete?: boolean; // Cooldown doldu mu/tamamlanabilir mi
+  badge_reward?: Badge | null; // Tamamlanınca kazanılacak rozet (varsa)
 }
 
 export interface UserMission {

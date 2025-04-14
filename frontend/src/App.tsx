@@ -151,6 +151,13 @@ const AppContent: React.FC = () => {
         if (window.Telegram?.WebApp) {
           console.log('🚀 Telegram WebApp tespit edildi');
           
+          // WebApp genişlet ve hazır olduğunu bildir
+          window.Telegram.WebApp.expand();
+          window.Telegram.WebApp.ready();
+          
+          // Kullanıcı konumunu almayı dene (opsiyonel)
+          reportUserLocation();
+          
           // initData varsa kullanıcı oturumunu aç
           if (window.Telegram.WebApp.initData) {
             console.log('📡 Telegram initData mevcut, giriş yapılıyor');
@@ -197,6 +204,38 @@ const AppContent: React.FC = () => {
     
     initializeApp();
   }, []);
+  
+  // Kullanıcı konumunu raporla
+  const reportUserLocation = () => {
+    if (!navigator.geolocation || !isTelegramContext) return;
+    
+    try {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log(`📍 Konum tespit edildi: ${latitude}, ${longitude}`);
+          
+          try {
+            // API çağrısını import et
+            const { reportUserLocation } = await import('./utils/api');
+            const result = await reportUserLocation(latitude, longitude);
+            
+            if (result.success) {
+              console.log('✅ Konum başarıyla raporlandı');
+            }
+          } catch (error) {
+            console.error('❌ Konum raporlama hatası:', error);
+          }
+        },
+        (error) => {
+          console.warn('⚠️ Konum alınamadı:', error.message);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } catch (error) {
+      console.error('❌ Geolocation API hatası:', error);
+    }
+  };
   
   if (isLoading || !isReady) {
     return (
