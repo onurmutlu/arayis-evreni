@@ -11,4 +11,11 @@ requests>=2.31.0 # HTTP istekleri için
 python-multipart>=0.0.5 # Form data işleme
 starlette>=0.30.0 # CORS ve middleware
 sqlalchemy_utils>=0.41.0 # SQLAlchemy yardımcıları
+
+# Test araçları
+pytest>=7.3.1
+pytest-cov>=4.1.0
+httpx>=0.24.0
+pytest-asyncio>=0.21.0
+
 # Gerekirse ek kütüphaneler eklenebilir

@@ -10,6 +10,11 @@ import uvicorn
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 import json
+import logging
+
+# Logger konfigürasyonu
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Ortam değişkenlerini yükle
 load_dotenv()
@@ -25,6 +30,7 @@ import routers.dao as dao
 import routers.admin as admin
 import routers.vip as vip
 import routers.leaderboard as leaderboard
+import routers.nft as nft
 import auth
 
 @asynccontextmanager
@@ -66,6 +72,7 @@ app.include_router(vip.router, prefix="/api/vip", tags=["VIP"])
 app.include_router(dao.router, prefix="/api/dao", tags=["DAO"])
 app.include_router(leaderboard.router, prefix="/api/leaderboard", tags=["Leaderboard"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
+app.include_router(nft.router, prefix="/nft", tags=["NFT Metadata"])
 
 # Frontend ile uyumlu olmak için doğrudan endpoint'ler
 @app.get("/profile/{uid}", tags=["Users"])
