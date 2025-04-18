@@ -48,13 +48,44 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS ayarlarını tüm domainlere izin verecek şekilde güncelleme
+# CORS ayarları - tüm originlere izin ver
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Tüm domainlere izin ver
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "http://localhost:5177",
+        "http://localhost:5178",
+        "http://localhost:5179", 
+        "http://localhost:5180",
+        "http://localhost:5190",
+        "http://localhost:5191",
+        "http://localhost:5192",
+        "http://localhost:5193",
+        "http://localhost:5194",
+        "http://localhost:5195",
+        "http://localhost:5196",
+        "http://localhost:5197",
+        "http://localhost:5198",
+        "http://localhost:5199",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
+        "http://127.0.0.1:5190",
+        "http://127.0.0.1:5191",
+        "http://127.0.0.1:5192",
+        "http://127.0.0.1:8080",
+        "https://arayis-evreni.vercel.app",
+        "https://arayis-evreni-staging.vercel.app",
+        "https://arayis-evreni.netlify.app",
+        "*"  # Geliştirme aşamasında tüm originlere izin veriyoruz
+    ],
     allow_credentials=True,
     allow_methods=["*"],  # Tüm HTTP metodlarına izin ver
     allow_headers=["*"],  # Tüm başlıklara izin ver
+    expose_headers=["Content-Disposition"]
 )
 
 # Router'ları ekle

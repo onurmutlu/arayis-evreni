@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import random
 
 # crud, models, schemas importları eklenecek
 import schemas
@@ -14,7 +15,7 @@ router = APIRouter()
 # TODO: /gallery/{uid} endpoint'i (Kullanıcının NFT'lerini listele)
 # TODO: Satıştaki NFT'leri listeleme endpoint'i
 
-@router.get("/nfts", response_model=List[schemas.NFT])
+@router.get("/all", response_model=List[schemas.NFT])
 async def read_all_nfts(
     category: Optional[str] = None,
     skip: int = 0, 
@@ -28,7 +29,7 @@ async def read_all_nfts(
     nfts = crud.get_all_nfts(db=db, category=category, skip=skip, limit=limit)
     return nfts
 
-@router.get("/nfts/{nft_id}", response_model=schemas.NFT)
+@router.get("/{nft_id}", response_model=schemas.NFT)
 async def read_nft_details(
     nft_id: int,
     current_user: models.User = Depends(auth.get_current_active_user),
@@ -134,12 +135,132 @@ async def mint_nft(
         print(f"Error minting NFT {request.nft_id} for user {current_user.id}: {e}")
         raise HTTPException(status_code=500, detail="NFT mint edilirken bir hata oluştu.")
 
-@router.get("/nfts/placeholder", response_model=List[schemas.NFT])
+@router.get("/placeholder", response_model=List[schemas.NFT])
 def read_nfts_placeholder(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     """
-    Geçici placeholder endpoint'i. Gerçek NFT listesi yerine boş liste döner.
+    Frontend için geçici NFT verileri döndürür.
+    ÖNEMLİ: Bu endpoint sadece geliştirme aşamasında kullanılmalıdır.
     """
-    # nfts = db.query(models.NFT).filter(models.NFT.is_active == True).offset(skip).limit(limit).all() # Gerçek crud fonksiyonu kullanılmalı
-    # raise HTTPException(status_code=501, detail="NFT listing not implemented yet")
-    print(f"Placeholder: Reading NFTs with skip={skip}, limit={limit}")
-    return [] # Şimdilik boş liste döndür 
+    
+    nfts = []
+    # Kategoriler
+    categories = [
+        models.NFTCategory.GENERAL,
+        models.NFTCategory.SORA_VIDEO,
+        models.NFTCategory.VOTE_BASIC,
+        models.NFTCategory.VOTE_PREMIUM,
+        models.NFTCategory.VOTE_SORA
+    ]
+    
+    nft_types = ['oracle', 'warrior', 'guardian', 'hacker', 'watcher', 'flirt', 'DAO', 'city']
+    
+    for i in range(1, 11):
+        category = random.choice(categories)
+        nft_type = random.choice(nft_types)
+        variant = random.randint(1, 4)
+        video_url = f"/assets/nft/NFT-{nft_type}-{variant}.mp4"
+        
+        nft = schemas.NFT(
+            id=i,
+            name=f"NFT #{i} ({nft_type.capitalize()})",
+            description=f"Bu {nft_type.capitalize()} NFT #{i} koleksiyonunun bir parçasıdır.",
+            image_url=video_url,
+            video_url=video_url,
+            category=category,
+            price_stars=random.randint(100, 1000),
+            total_supply=random.randint(100, 1000),
+            mintable=True,
+            is_active=True,
+            created_at=datetime.now()
+        )
+        nfts.append(nft)
+    
+    return nfts
+
+# Tüm NFT'leri getir
+@router.get("/", response_model=List[schemas.NFT])
+def read_nfts(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100
+):
+    """
+    Get all NFTs.
+    """
+    # nfts = crud.get_all_nfts(db, skip=skip, limit=limit)
+    # nfts = crud.get_all_nfts(db)
+    
+    nfts = []
+    
+    # NFT kategorileri ve tipleri - tutarlılık için sabit listeler
+    categories = [
+        models.NFTCategory.GENERAL,
+        models.NFTCategory.SORA_VIDEO,
+        models.NFTCategory.VOTE_BASIC, 
+        models.NFTCategory.VOTE_PREMIUM,
+        models.NFTCategory.VOTE_SORA
+    ]
+
+    nft_types = ['oracle', 'warrior', 'guardian', 'hacker', 'watcher', 'flirt', 'DAO', 'city']
+
+    # NFT isimleri ve açıklamaları
+    nft_names = {
+        'oracle': "Kehanet Ustası",
+        'warrior': "Dijital Savaşçı", 
+        'guardian': "Ağ Koruyucusu",
+        'hacker': "Etik Hacker",
+        'watcher': "Gözlemci",
+        'flirt': "Sosyal Manipülatör",
+        'DAO': "DAO Kurucusu",
+        'city': "Dijital Şehir"
+    }
+
+    nft_descriptions = {
+        'oracle': "Veri akışlarını analiz ederek geleceği tahmin edebilen bir ajan tipi.",
+        'warrior': "Dijital arenada mücadele eden, siber saldırılara karşı direnen savaşçı.",
+        'guardian': "Sistemleri ve ağları korumak için tasarlanmış koruyucu ajan.",
+        'hacker': "Sistemlere sızma ve bilgi toplama konusunda uzmanlaşmış ajan.",
+        'watcher': "Dijital ortamları sürekli gözlemleyen ve izleyen ajan.",
+        'flirt': "Sosyal mühendislik taktikleriyle bilgi toplayan çekici ajan.",
+        'DAO': "Dağıtık otonom organizasyonları kuran ve yöneten ajan.",
+        'city': "Dijital şehirlerde faaliyet gösteren urban ajan."
+    }
+
+    for i in range(1, 11):
+        # id'ye göre tutarlı kategori ve tip seçimi
+        category_index = (i * 7) % len(categories)
+        type_index = (i * 3) % len(nft_types)
+        
+        category = categories[category_index]
+        nft_type = nft_types[type_index]
+        
+        # id'ye göre tutarlı varyasyon numarası
+        variant_num = (i % 4) + 1
+        
+        video_url = f"/assets/nft/NFT-{nft_type}-{variant_num}.mp4"
+        
+        # Seviyeye göre fiyat
+        price = 200 + (i * 50)
+        
+        # NFT adı
+        nft_name = f"{nft_names[nft_type]} #{variant_num}"
+        
+        # NFT açıklaması
+        nft_description = nft_descriptions[nft_type]
+        
+        nft = schemas.NFT(
+            id=i,
+            name=nft_name,
+            description=nft_description,
+            image_url=video_url,
+            video_url=video_url,
+            category=category,
+            price_stars=price,
+            total_supply=100 + (i * 30),
+            mintable=True,
+            is_active=True,
+            created_at=datetime.now()
+        )
+        nfts.append(nft)
+    
+    return nfts 

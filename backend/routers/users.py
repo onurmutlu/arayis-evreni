@@ -36,57 +36,21 @@ def calculate_level_from_xp(xp: int) -> int:
         return max(4, round(xp / 100))
 
 # TODO: /profil/{uid} endpoint'i - EKLENDI
-@router.get("/profile/{uid}", response_model=Dict[str, Any], tags=["User Profile"])
+@router.get("/profile/{uid}", response_model=schemas.UserProfile)
 async def get_user_profile(uid: str, db: Session = Depends(get_db)):
-    """
-    Kullanıcı profil bilgilerini döndürür:
-    - XP, seviye, rozet listesi, görev serisi (streak)
-    """
-    try:
-        # Kullanıcıyı Telegram ID ile bul
-        telegram_id = int(uid)
-        user = crud.get_user_by_telegram_id(db, telegram_id=telegram_id)
-        if not user:
-            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
-        
-        # Kullanıcının rozetlerini al
-        badges = []
-        if hasattr(user, 'badges') and user.badges:
-            badges = [badge.badge.name for badge in user.badges]
-        
-        # XP değerine göre seviyeyi hesapla
-        level = calculate_level_from_xp(user.xp)
-        
-        # İstenen formatta yanıt döndür
-        return {
-            "uid": uid,
-            "xp": user.xp,
-            "level": level,
-            "streak": user.mission_streak,
-            "rozetler": badges
-        }
-    except ValueError:
-        # Telegram ID sayı değilse kullanıcı adını dene
-        user = crud.get_user_by_username(db, username=uid)
-        if not user:
-            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
-        
-        # Kullanıcının rozetlerini al
-        badges = []
-        if hasattr(user, 'badges') and user.badges:
-            badges = [badge.badge.name for badge in user.badges]
-        
-        # XP değerine göre seviyeyi hesapla
-        level = calculate_level_from_xp(user.xp)
-        
-        # İstenen formatta yanıt döndür
-        return {
-            "uid": uid,
-            "xp": user.xp,
-            "level": level,
-            "streak": user.mission_streak,
-            "rozetler": badges
-        }
+    # Numeric uid means user_id, otherwise it's a username
+    user = None
+    if uid.isdigit():
+        user = crud.get_user_profile(db, int(uid))
+    else:
+        user_obj = crud.get_user_by_username(db, uid)
+        if user_obj:
+            user = crud.get_user_profile(db, user_obj.id)
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user
 
 # TODO: /wallet/{uid} endpoint'i
 # TODO: /stars/use endpoint'i
@@ -225,57 +189,21 @@ async def get_my_invite_info(
 
 
 # Kullanıcının cüzdan bilgilerini kullanıcı adına göre döndüren endpoint
-@router.get("/wallet/{uid}", response_model=Dict[str, Any], tags=["User Wallet"])
+@router.get("/wallet/{uid}", response_model=schemas.UserWallet)
 async def get_user_wallet(uid: str, db: Session = Depends(get_db)):
-    """
-    Kullanıcının cüzdan bilgilerini döndürür:
-    - Stars (yıldız) bakiyesi
-    - Sahip olunan NFT ID'leri
-    - Toplam harcanan yıldızlar
-    """
-    try:
-        # Kullanıcıyı Telegram ID ile bul
-        telegram_id = int(uid)
-        user = crud.get_user_by_telegram_id(db, telegram_id=telegram_id)
-        if not user:
-            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
-        
-        # NFT ID'lerini al
-        nft_ids = []
-        if hasattr(user, 'nfts') and user.nfts:
-            nft_ids = [user_nft.nft_id for user_nft in user.nfts]
-        
-        # Toplam harcanan yıldızları transaction tablosundan hesapla
-        stars_spent = crud.get_user_stars_spent(db, user_id=user.id)
-        
-        # İstenen formatta yanıt döndür
-        return {
-            "uid": uid,
-            "stars": user.stars,
-            "nft_ids": nft_ids,
-            "stars_spent": stars_spent
-        }
-    except ValueError:
-        # Telegram ID sayı değilse kullanıcı adını dene
-        user = crud.get_user_by_username(db, username=uid)
-        if not user:
-            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
-        
-        # NFT ID'lerini al
-        nft_ids = []
-        if hasattr(user, 'nfts') and user.nfts:
-            nft_ids = [user_nft.nft_id for user_nft in user.nfts]
-        
-        # Toplam harcanan yıldızları transaction tablosundan hesapla
-        stars_spent = crud.get_user_stars_spent(db, user_id=user.id)
-        
-        # İstenen formatta yanıt döndür
-        return {
-            "uid": uid,
-            "stars": user.stars,
-            "nft_ids": nft_ids,
-            "stars_spent": stars_spent
-        }
+    # Numeric uid means user_id, otherwise it's a username
+    user_wallet = None
+    if uid.isdigit():
+        user_wallet = crud.get_user_wallet(db, int(uid))
+    else:
+        user_obj = crud.get_user_by_username(db, uid)
+        if user_obj:
+            user_wallet = crud.get_user_wallet(db, user_obj.id)
+    
+    if not user_wallet:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user_wallet
 
 
 # Stars harcama endpoint'i (JWT korumalı)

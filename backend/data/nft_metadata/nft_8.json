@@ -1,0 +1,16 @@
+{
+  "id": 8,
+  "name": "DAO Üyesi",
+  "category": "vote-premium",
+  "level": 1,
+  "video": "/assets/nft/NFT-DAO.mp4",
+  "image": "/assets/nft/NFT-DAO.mp4",
+  "description": "DAO'da oy kullanma haklarına sahip olursun.",
+  "price": 20000,
+  "rarity": "legendary",
+  "benefits": [
+    "DAO'da premium oy hakkı",
+    "Özel içeriklere erişim",
+    "Topluluğu yönetme yetkisi"
+  ]
+}

@@ -212,20 +212,20 @@ const Gorevler: React.FC = () => {
               return (
                 <div 
                   key={gorev.id} 
-                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg shadow-sm transition-all ${isLocked ? 'bg-muted/50 border-border/50 opacity-70' : 'bg-card border-border hover:shadow-md'}`}
+                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg shadow-sm transition-all ${isLocked ? 'bg-surface/50 border-surface/50 opacity-70' : 'bg-surface border-surface/20 hover:shadow-md'}`}
                 > 
                   <div className="flex items-center mr-4 overflow-hidden flex-grow mb-3 sm:mb-0"> 
-                      <Icon size={24} className={`mr-4 flex-shrink-0 ${isLocked ? 'text-textMuted' : 'text-primary'}`}/> 
+                      <Icon size={24} className={`mr-4 flex-shrink-0 ${isLocked ? 'text-text-secondary' : 'text-primary'}`}/> 
                       <div className="flex-grow"> 
-                          <h3 className={`text-md font-semibold ${isLocked ? 'text-textMuted' : 'text-text'} truncate`} title={gorev.title}>{gorev.title}</h3> 
-                          <p className={`text-sm ${isLocked ? 'text-textMuted' : 'text-textSecondary'} whitespace-normal`}>{gorev.description}</p> 
+                          <h3 className={`text-md font-semibold ${isLocked ? 'text-text-secondary' : 'text-text'} truncate`} title={gorev.title}>{gorev.title}</h3> 
+                          <p className={`text-sm ${isLocked ? 'text-text-secondary/70' : 'text-text-secondary'} whitespace-normal`}>{gorev.description}</p> 
                       </div> 
                   </div> 
 
                   <div className="text-right ml-auto flex-shrink-0 flex flex-col sm:flex-row items-end sm:items-center w-full sm:w-auto"> 
-                      <p className={`text-lg font-bold ${isLocked ? 'text-textMuted' : 'text-primary'} mr-0 sm:mr-4 mb-2 sm:mb-0`}>+{gorev.xp_reward} XP</p> 
+                      <p className={`text-lg font-bold ${isLocked ? 'text-text-secondary' : 'text-primary'} mr-0 sm:mr-4 mb-2 sm:mb-0`}>+{gorev.xp_reward} XP</p> 
                       {isLocked ? (
-                          <div className="flex items-center text-xs text-textMuted px-2 py-1 bg-background rounded border border-border">
+                          <div className="flex items-center text-xs text-text-secondary px-2 py-1 bg-background rounded border border-surface">
                               <Lock size={14} className="mr-1.5" />
                               {gorev.required_nft_id 
                                 ? `${getReadableCategoryName(gorev.category || null)} NFT Gerekli` 

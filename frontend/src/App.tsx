@@ -111,6 +111,29 @@ const AppContent: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userDataLoaded, setUserDataLoaded] = useState(false);
   
+  // Tema uygulaması için ayrı bir effect
+  useEffect(() => {
+    // Hemen dark tema uygula, sayfanın titremesini önle
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.style.backgroundColor = '#1a1a1a';
+    document.body.style.backgroundColor = '#1a1a1a';
+    document.body.classList.add('dark-theme');
+    
+    // HTML ve body elementlerine doğrudan stil uygula
+    const applyDarkThemeStyles = () => {
+      const style = document.createElement('style');
+      style.innerHTML = `
+        html, body {
+          background-color: #1a1a1a !important;
+          color: #e5e7eb !important;
+        }
+      `;
+      document.head.appendChild(style);
+    };
+    
+    applyDarkThemeStyles();
+  }, []);
+  
   // Yeni fonksiyon - Kullanıcı verilerini yükle
   const loadUserData = async () => {
     if (!user || userDataLoaded) return;
@@ -154,6 +177,16 @@ const AppContent: React.FC = () => {
           // WebApp genişlet ve hazır olduğunu bildir
           window.Telegram.WebApp.expand();
           window.Telegram.WebApp.ready();
+          
+          // Telegram WebApp tema renklerini güçlendirilmiş şekilde ayarla
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.body.classList.add('dark-theme');
+          
+          // CSS Değişkenlerini doğrudan tema değerleriyle güncelle
+          document.documentElement.style.setProperty('--background', '#1a1a1a', 'important');
+          document.documentElement.style.setProperty('--surface', '#2a2a2a', 'important');
+          document.documentElement.style.setProperty('--text', '#e5e7eb', 'important');
+          document.documentElement.style.setProperty('--text-secondary', '#9ca3af', 'important');
           
           // Kullanıcı konumunu almayı dene (opsiyonel)
           reportUserLocation();

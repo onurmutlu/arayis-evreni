@@ -106,6 +106,51 @@ async def admin_read_all_missions(skip: int = 0, limit: int = 100, db: Session =
     missions = db.query(models.Mission).order_by(models.Mission.id).offset(skip).limit(limit).all()
     return missions
 
+# Rozet İşlemleri
+@router.post("/badges", response_model=schemas.Badge, status_code=201, summary="Create Badge")
+async def admin_create_badge(
+    badge_data: schemas.AdminCreateBadgeRequest,
+    db: Session = Depends(get_db)
+):
+    """(Admin Only) Creates a new badge."""
+    # İsteğe bağlı: Gerekli Misyon ID'si varsa geçerli bir misyon mu kontrol et
+    if badge_data.required_mission_id:
+        mission = crud.get_mission(db, mission_id=badge_data.required_mission_id)
+        if not mission:
+            raise HTTPException(status_code=400, detail=f"Required Mission ID {badge_data.required_mission_id} bulunamadı.")
+    return crud.create_badge_admin(db, badge_data=badge_data)
+
+@router.get("/badges", response_model=List[schemas.Badge], summary="List All Badges")
+async def admin_read_all_badges(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """(Admin Only) Lists all badges."""
+    badges = db.query(models.Badge).order_by(models.Badge.id).offset(skip).limit(limit).all()
+    return badges
+
+@router.post("/badges/award/{badge_id}/{telegram_id}", response_model=dict, summary="Award Badge to User")
+async def admin_award_badge(
+    badge_id: int,
+    telegram_id: int,
+    db: Session = Depends(get_db)
+):
+    """(Admin Only) Awards a badge to a user manually."""
+    user = crud.get_user_by_telegram_id(db, telegram_id=telegram_id)
+    if not user:
+        raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {telegram_id}")
+    
+    badge = crud.get_badge(db, badge_id=badge_id)
+    if not badge:
+        raise HTTPException(status_code=404, detail=f"Rozet bulunamadı: {badge_id}")
+    
+    # Rozeti ver
+    user_badge = crud.award_badge_to_user(db, user_id=user.id, badge_id=badge_id)
+    
+    return {
+        "success": True,
+        "message": f"{badge.name} rozeti {user.username} kullanıcısına verildi.",
+        "badge_id": badge_id,
+        "user_id": user.id,
+        "telegram_id": telegram_id
+    }
 
 # TODO: Rozet, NFT, DAO Oylama yönetimi için Admin endpointleri eklenebilir.
 # Örneğin:

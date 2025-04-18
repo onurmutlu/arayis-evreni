@@ -1,0 +1,15 @@
+{
+  "id": 7,
+  "name": "Şehir",
+  "category": "general",
+  "level": 1,
+  "video": "/assets/nft/NFT-city.mp4",
+  "image": "/assets/nft/NFT-city.mp4",
+  "description": "Sanal şehirde mülk sahibi olursun.",
+  "price": 15000,
+  "rarity": "epic",
+  "benefits": [
+    "Sanal şehirde mülk sahibi olun",
+    "Bölgesel etkinliklerde ayrıcalıklar"
+  ]
+}

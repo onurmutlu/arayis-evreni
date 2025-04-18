@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
+from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from models import MissionType, NFTCategory, ProposalStatus, Badge as BadgeModel
 
@@ -15,6 +15,8 @@ class MissionBase(BaseModel):
     is_vip: bool = False
     required_nft_id: Optional[int] = None
 
+    model_config = ConfigDict(from_attributes=True)
+
 class BadgeBase(BaseModel):
     name: str
     description: str
@@ -22,6 +24,8 @@ class BadgeBase(BaseModel):
     required_xp: Optional[int] = None
     required_mission_id: Optional[int] = None
     is_active: bool = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 class NFTBase(BaseModel):
     name: str
@@ -34,15 +38,21 @@ class NFTBase(BaseModel):
     mintable: bool = False
     is_active: bool = True
 
+    model_config = ConfigDict(from_attributes=True)
+
 class DAOProposalBase(BaseModel):
     title: str
     description: str
     end_date: datetime
 
+    model_config = ConfigDict(from_attributes=True)
+
 class UserBase(BaseModel):
     telegram_id: int
     username: Optional[str] = None
     first_name: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 # Create Schemas (Oluşturma için)
 class MissionCreate(MissionBase):
@@ -68,8 +78,7 @@ class UserBadgeSchema(BaseModel):
     badge_image_url: str
     earned_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserNFTSchema(BaseModel):
     nft_id: int
@@ -78,15 +87,13 @@ class UserNFTSchema(BaseModel):
     purchase_date: datetime
     purchase_price_stars: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserMissionSchema(BaseModel):
     mission_id: int
     completed_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Ana Okuma Şemaları
@@ -95,21 +102,18 @@ class Mission(MissionBase):
     created_at: datetime
     required_nft_name: Optional[str] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Badge(BadgeBase):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class NFT(NFTBase):
     id: int
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MissionStorySchema(BaseModel):
     id: int
@@ -117,8 +121,7 @@ class MissionStorySchema(BaseModel):
     story_text: str
     timestamp: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class User(UserBase):
     id: int
@@ -134,8 +137,7 @@ class User(UserBase):
     mission_streak: int = 0
     invited_users_count: int = 0
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Detaylı profil ve cüzdan şemaları
 class UserProfile(User):
@@ -143,8 +145,7 @@ class UserProfile(User):
     completed_missions: List[UserMissionSchema] = []
     mission_stories: List[MissionStorySchema] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserWallet(BaseModel):
@@ -155,8 +156,7 @@ class UserWallet(BaseModel):
     stars_enabled: bool
     nfts: List[UserNFTSchema] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DAOVoteSchema(BaseModel):
@@ -167,8 +167,7 @@ class DAOVoteSchema(BaseModel):
     choice: bool
     voted_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DAOProposal(DAOProposalBase):
     id: int
@@ -178,8 +177,7 @@ class DAOProposal(DAOProposalBase):
     total_yes_power: int = 0
     total_no_power: int = 0
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Diğer Yardımcı Şemalar
@@ -225,6 +223,8 @@ class UserLoginData(BaseModel):
     is_premium: Optional[bool] = None
     photo_url: Optional[str] = None
 
+    model_config = ConfigDict(from_attributes=True)
+
 class InitData(BaseModel):
     query_id: Optional[str] = None
     user: Optional[UserLoginData] = None
@@ -237,12 +237,16 @@ class InitData(BaseModel):
     auth_date: int
     hash: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
     telegram_id: Optional[int] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class DailyBonusStatus(BaseModel):
     can_claim: bool
@@ -252,18 +256,21 @@ class DailyBonusStatus(BaseModel):
     today_reward_stars: Optional[int] = None
     streak_reward_nft: Optional[NFT] = None
 
+    model_config = ConfigDict(from_attributes=True)
+
 class LeaderboardEntry(BaseModel):
     rank: int
     user_id: int
     username: Optional[str] = None
     value: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class LeaderboardResponse(BaseModel):
     category: str
     entries: List[LeaderboardEntry]
+
+    model_config = ConfigDict(from_attributes=True)
 
 class ClaimDailyBonusResponse(BaseModel):
     message: str
@@ -272,10 +279,14 @@ class ClaimDailyBonusResponse(BaseModel):
     claimed_nft: Optional[NFT] = None
     new_streak: int
 
+    model_config = ConfigDict(from_attributes=True)
+
 class InviteInfoResponse(BaseModel):
     invite_link: str
     successful_invites: int
     reward_per_invite_stars: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 class UnlockVipRequest(BaseModel):
     pass
@@ -285,17 +296,25 @@ class UnlockVipResponse(BaseModel):
     remaining_stars: int
     vip_access_granted: bool
 
+    model_config = ConfigDict(from_attributes=True)
+
 class AdminAddStarsRequest(BaseModel):
     telegram_id: int
     amount: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 class AdminToggleStarsRequest(BaseModel):
     telegram_id: int
     enable: bool
 
+    model_config = ConfigDict(from_attributes=True)
+
 class AdminToggleVipRequest(BaseModel):
     telegram_id: int
     enable: bool
+
+    model_config = ConfigDict(from_attributes=True)
 
 class AdminUpdateMissionRequest(BaseModel):
     title: Optional[str] = None
@@ -308,6 +327,8 @@ class AdminUpdateMissionRequest(BaseModel):
     is_vip: Optional[bool] = None
     required_nft_id: Optional[int] = None
 
+    model_config = ConfigDict(from_attributes=True)
+
 class AdminUpdateUserRequest(BaseModel):
     xp: Optional[int] = None
     level: Optional[int] = None
@@ -315,8 +336,12 @@ class AdminUpdateUserRequest(BaseModel):
     has_vip_access: Optional[bool] = None
     stars_enabled: Optional[bool] = None
 
+    model_config = ConfigDict(from_attributes=True)
+
 class AdminUserActionRequest(BaseModel):
     telegram_id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 class AdminCreateMissionRequest(MissionCreate):
     pass

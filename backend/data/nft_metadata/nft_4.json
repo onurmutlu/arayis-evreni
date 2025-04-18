@@ -1,0 +1,15 @@
+{
+  "id": 4,
+  "name": "Hacker",
+  "category": "general",
+  "level": 1,
+  "video": "/assets/nft/NFT-hacker.mp4",
+  "image": "/assets/nft/NFT-hacker.mp4",
+  "description": "Sistemle etkileşimini güçlendirir.",
+  "price": 7500,
+  "rarity": "uncommon",
+  "benefits": [
+    "Sistem etkileşiminiz %20 daha güçlü",
+    "Her gün ekstra XP kazanımı"
+  ]
+}

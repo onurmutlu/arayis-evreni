@@ -8,27 +8,35 @@ import {
     NFTCategory, ProposalStatus, StarTransactionHistoryResponse // Enums needed for placeholders
 } from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+// .env'den API_URL alınıyor, en sonda / olmamalı, ona göre endpoint çağrılarda düzeltme yapılacak
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // --- Token Management ---
 let authToken: string | null = null;
 
 export function setAuthToken(token: string | null) {
     authToken = token;
-    // Optionally store in localStorage/sessionStorage for persistence
-    // if (token) { localStorage.setItem('authToken', token); } else { localStorage.removeItem('authToken'); }
+    // Kalıcılık için localStorage'a kaydet
+    if (token) { 
+        localStorage.setItem('authToken', token); 
+    } else { 
+        localStorage.removeItem('authToken'); 
+    }
 }
 
 export function getAuthToken(): string | null {
-    // Optionally retrieve from localStorage/sessionStorage
-    // return authToken || localStorage.getItem('authToken');
-    return authToken;
+    // localStorage'dan al, yoksa memory'den al
+    return authToken || localStorage.getItem('authToken');
 }
 
 // --- API Call Helper ---
 export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = getAuthToken();
-    const url = `${API_BASE_URL}${endpoint}`;
+    // Endpoint / ile başlıyorsa, o şekilde kullan
+    const url = endpoint.startsWith('/') 
+        ? `${API_BASE_URL}${endpoint}`  // /profile/123 -> http://api.com/profile/123
+        : `${API_BASE_URL}/${endpoint}`; // profile/123 -> http://api.com/profile/123
+    
     // Headers objesi oluştur
     const headers = new Headers(options.headers || {});
     // Content-Type'ı sadece body varsa veya belirtilmemişse ekle
@@ -68,7 +76,7 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
 // --- Auth API ---
 export const loginWithInitData = async (initData: string): Promise<TokenResponse> => {
     // console.log("API CALL: loginWithInitData");
-    const response = await apiCall<TokenResponse>(`/login`, {
+    const response = await apiCall<TokenResponse>(`/api/token`, {
         method: 'POST',
         body: JSON.stringify({ initData: initData })
     });
@@ -81,6 +89,7 @@ export const loginWithInitData = async (initData: string): Promise<TokenResponse
 
 // --- USER API ---
 export const fetchUserProfile = async (uid?: string): Promise<UserProfile> => {
+    // Eğer uid parametresi varsa onu kullan, yoksa getTelegramUserIdForApi() kullan
     const userId = uid || getTelegramUserIdForApi();
     console.log(`API CALL: fetchUserProfile for ${userId}`);
     return apiCall<UserProfile>(`/profile/${userId}`);
@@ -94,7 +103,7 @@ export const fetchUserWallet = async (uid?: string): Promise<any> => {
 
 export const useStars = async (amount: number, reason: string): Promise<UseStarsResponse> => {
     // console.warn(`API CALL: useStars ${amount} for ${reason}`);
-    return apiCall<UseStarsResponse>(`/me/stars/use`, {
+    return apiCall<UseStarsResponse>(`/api/users/use-stars`, {
         method: 'POST',
         body: JSON.stringify({ amount, reason })
     });
@@ -103,18 +112,18 @@ export const useStars = async (amount: number, reason: string): Promise<UseStars
 // --- Daily Bonus API ---
 export const fetchDailyBonusStatus = async (): Promise<DailyBonusStatus> => {
     //  console.warn(`API CALL: fetchDailyBonusStatus`);
-     return apiCall<DailyBonusStatus>('/me/daily-bonus/status');
+     return apiCall<DailyBonusStatus>('/api/users/daily-bonus');
 };
 
 export const claimDailyBonus = async (): Promise<ClaimDailyBonusResponse> => {
     //  console.warn(`API CALL: claimDailyBonus`);
-     return apiCall<ClaimDailyBonusResponse>('/me/daily-bonus/claim', { method: 'POST' });
+     return apiCall<ClaimDailyBonusResponse>('/api/users/claim-daily-bonus', { method: 'POST' });
 };
 
 // --- Invite API ---
 export const fetchInviteInfo = async (): Promise<InviteInfoResponse> => {
     //  console.warn(`API CALL: fetchInviteInfo`);
-     return apiCall<InviteInfoResponse>('/me/invite-info');
+     return apiCall<InviteInfoResponse>('/api/users/invite-info');
 };
 
 // --- MISSIONS API ---
@@ -134,7 +143,7 @@ export const completeMission = async (missionId: number): Promise<CompleteMissio
     console.log(`API CALL: completeMission ${missionId}`);
     try {
         const uid = getTelegramUserIdForApi();
-        const response = await apiCall<CompleteMissionResponse>(`/gorev-tamamla`, {
+        const response = await apiCall<CompleteMissionResponse>(`/api/missions/gorev-tamamla`, {
             method: 'POST',
             body: JSON.stringify({ uid, gorev_id: missionId })
         });
@@ -187,7 +196,7 @@ export const purchaseVip = async (): Promise<UnlockVipResponse> => {
 // --- Leaderboard API ---
 export const fetchLeaderboard = async (category: string, limit: number = 20): Promise<LeaderboardResponse> => {
     // console.warn(`API CALL: fetchLeaderboard ${category}`);
-    return apiCall<LeaderboardResponse>(`/leaderboard/${category}?limit=${limit}`);
+    return apiCall<LeaderboardResponse>(`/api/leaderboard/${category}?limit=${limit}`);
 };
 
 // --- NFTs API ---

@@ -127,5 +127,30 @@ async def get_mission_cooldowns(
                 
     return result
 
+# Açık görev listesi endpoint'i (demo veya test için)
+@router.get("/missions/{uid}", response_model=List[schemas.Mission])
+async def get_open_missions_for_user(
+    uid: str,
+    category: Optional[str] = Query(None, description="Filtrelenecek görev kategorisi"),
+    db: Session = Depends(get_db)
+):
+    """
+    Belirli bir kullanıcı için erişilebilir görevleri listeler.
+    Bu endpoint, frontend tarafından kullanılabilir ve Telegram kullanıcı ID'si veya kullanıcı adı ile erişilebilir.
+    """
+    try:
+        # Telegram ID ile kullanıcıyı bul
+        telegram_id = int(uid)
+        user = crud.get_user_by_telegram_id(db, telegram_id=telegram_id)
+    except ValueError:
+        # Kullanıcı adı ile bul
+        user = crud.get_user_by_username(db, username=uid)
+    
+    if not user:
+        raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
+    
+    missions = crud.get_missions_for_user(db=db, user=user, category=category)
+    return missions
+
 # Eski placeholder endpoint'i kaldır
 # @router.get("/missions/placeholder", ...) ... 

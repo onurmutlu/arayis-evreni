@@ -1,0 +1,15 @@
+{
+  "id": 3,
+  "name": "Kahin",
+  "category": "general",
+  "level": 1,
+  "video": "/assets/nft/NFT-oracle.mp4",
+  "image": "/assets/nft/NFT-oracle.mp4",
+  "description": "Gelecekteki görevleri tahmin edebilirsin.",
+  "price": 5000,
+  "rarity": "uncommon",
+  "benefits": [
+    "Gelecekteki görevleri önceden görebilir",
+    "DAO oylamalarında %5 daha fazla oy gücü"
+  ]
+}

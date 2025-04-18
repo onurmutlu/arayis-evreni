@@ -3,121 +3,167 @@
 @unocss preflights;
 @unocss default;
 
-:root {
-  /* Telegram WebApp theme variables - default theme */
-  --tg-theme-bg-color: #ffffff;
-  --tg-theme-text-color: #000000;
-  --tg-theme-hint-color: #707579;
-  --tg-theme-link-color: #3390ec;
-  --tg-theme-button-color: #2481cc;
-  --tg-theme-button-text-color: #ffffff;
-  --tg-theme-secondary-bg-color: #f4f4f5;
-
-  /* App colors mapping to Telegram colors */
-  --background: var(--tg-theme-bg-color);
-  --text: var(--tg-theme-text-color);
-  --text-secondary: var(--tg-theme-hint-color);
-  --primary: var(--tg-theme-button-color);
-  --primary-text: var(--tg-theme-button-text-color);
-  --card: var(--tg-theme-secondary-bg-color);
-  --border: rgba(0, 0, 0, 0.12);
-  --muted: rgba(0, 0, 0, 0.06);
-  --success: #4caf50;
-  --error: #f44336;
-  --warning: #ff9800;
-
-  color-scheme: light dark;
+/* Reset and base styles */
+:root, html, body {
+  background-color: #0f0f19 !important;
+  color: #e5e7eb !important;
+  color-scheme: dark !important;
 }
 
-/* Dark theme overrides */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Fallback dark theme if Telegram theme is not available */
-    --tg-theme-bg-color: #1e1e1e;
-    --tg-theme-text-color: #ffffff;
-    --tg-theme-hint-color: #aaaaaa;
-    --tg-theme-link-color: #3390ec;
-    --tg-theme-button-color: #3390ec;
-    --tg-theme-button-text-color: #ffffff;
-    --tg-theme-secondary-bg-color: #2c2c2c;
-
-    --border: rgba(255, 255, 255, 0.12);
-    --muted: rgba(255, 255, 255, 0.06);
-  }
+/* Force dark theme */
+html, body, #root, [data-theme], :root {
+  --background: #0f0f19 !important;
+  --surface: #1a1a2e !important;
+  --text: #e5e7eb !important;
+  --text-secondary: #9ca3af !important;
+  --primary: #7c3aed !important;
+  --secondary: #0ea5e9 !important;
+  --xp-bar: #f59e0b !important;
+  --success: #22c55e !important;
+  --error: #ef4444 !important;
+  --border: rgba(255, 255, 255, 0.12) !important;
+  --muted: rgba(255, 255, 255, 0.08) !important;
+  --card-gradient: linear-gradient(135deg, #1a1a2e 0%, #242444 100%) !important;
+  --primary-gradient: linear-gradient(135deg, #6025c0 0%, #9446ff 100%) !important;
+  --secondary-gradient: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%) !important;
 }
 
-html {
-  margin: 0;
-  padding: 0;
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
+/* Telegram theme values - still load them but they won't override our forced theme */
 body {
-  margin: 0;
-  padding: 0;
+  /* Telegram WebApp theme variables */
+  --tg-theme-bg-color: var(--background);
+  --tg-theme-text-color: var(--text);
+  --tg-theme-hint-color: var(--text-secondary);
+  --tg-theme-link-color: var(--primary);
+  --tg-theme-button-color: var(--primary);
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-secondary-bg-color: var(--surface);
+  
+  /* Background pattern */
+  background-image: 
+    radial-gradient(circle at 25px 25px, rgba(124, 58, 237, 0.05) 2px, transparent 0),
+    radial-gradient(circle at 75px 75px, rgba(14, 165, 233, 0.05) 2px, transparent 0);
+  background-size: 100px 100px;
+}
+
+/* App styles */
+body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--background);
-  color: var(--text);
   transition: background-color 0.2s, color 0.2s;
   min-height: 100vh;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
-/* Telegram WebApp uyumlu stil sınıfları */
+/* Force dark theme on all elements */
+*, *::before, *::after {
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+/* Common utility classes */
+.bg-background {
+  background-color: var(--background) !important;
+}
+
+.bg-surface {
+  background-color: var(--surface) !important;
+}
+
+.bg-card-gradient {
+  background-image: var(--card-gradient) !important;
+}
+
+.bg-primary-gradient {
+  background-image: var(--primary-gradient) !important;
+}
+
+.bg-secondary-gradient {
+  background-image: var(--secondary-gradient) !important;
+}
+
+.text-text {
+  color: var(--text) !important;
+}
+
+.text-text-secondary {
+  color: var(--text-secondary) !important;
+}
+
 .bg-primary {
-  background-color: var(--primary);
-  color: var(--primary-text);
+  background-color: var(--primary) !important;
 }
 
 .text-primary {
-  color: var(--primary);
+  color: var(--primary) !important;
 }
 
-.bg-card {
-  background-color: var(--card);
+.bg-secondary {
+  background-color: var(--secondary) !important;
 }
 
-.text-hint {
-  color: var(--text-secondary);
+.text-secondary {
+  color: var(--secondary) !important;
 }
 
-.border-default {
-  border-color: var(--border);
+.bg-success {
+  background-color: var(--success) !important;
 }
 
-.bg-muted {
-  background-color: var(--muted);
+.text-success {
+  color: var(--success) !important;
 }
 
-/* Animasyonlar */
+.bg-error {
+  background-color: var(--error) !important;
+}
+
+.text-error {
+  color: var(--error) !important;
+}
+
+.border-surface {
+  border-color: var(--surface) !important;
+}
+
+/* Card effect */
+.card-glow {
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* Animations */
 @keyframes bounce-up-and-fade {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  20% {
-    opacity: 1;
-    transform: translateY(-10px);
-  }
-  40% {
-    transform: translateY(0);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
-  80% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
+  0% { opacity: 0; transform: translateY(20px); }
+  20% { opacity: 1; transform: translateY(-10px); }
+  40% { transform: translateY(0); }
+  60% { transform: translateY(-5px); }
+  80% { transform: translateY(0); opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px); }
 }
 
 .animate-bounce-up-and-fade {
   animation: bounce-up-and-fade 2s forwards;
+}
+
+@keyframes confetti {
+  0% { transform: translateY(0) rotateZ(0); opacity: 1; }
+  100% { transform: translateY(500px) rotateZ(360deg); opacity: 0; }
+}
+
+.animate-confetti {
+  animation: confetti 3s forwards;
+}
+
+/* Shimmer effect for loading states */
+.shimmer {
+  background: linear-gradient(90deg, var(--surface) 0%, rgba(124, 58, 237, 0.1) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 } 

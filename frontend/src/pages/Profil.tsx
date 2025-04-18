@@ -103,8 +103,12 @@ const Profil: React.FC = () => {
     setError(null);
     
     try {
+      // Telegram ID'si veya default demo123 ID kullan
+      const userId = getTelegramUserId()?.toString() || "demo123";
+      console.log("Profil sayfası yükleniyor, userId:", userId);
+      
       // Kullanıcı profil bilgilerini al
-      const profileData = await fetchUserProfile(getTelegramUserId()?.toString() || "");
+      const profileData = await fetchUserProfile(userId);
       setProfileData(profileData);
       triggerHapticFeedback('success');
       
@@ -236,11 +240,11 @@ const Profil: React.FC = () => {
       <SayfaBasligi title="Profil" icon={User} />
       
       {/* Profil kartı */}
-      <div className="bg-surface rounded-lg shadow-lg overflow-hidden mb-6">
+      <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden mb-6 card-glow">
         <div className="p-6">
           {/* Kullanıcı adı ve avatar */}
           <div className="flex items-center mb-6">
-            <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center text-primary">
+            <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center text-primary p-1 border border-primary/30">
               {user?.photo_url ? (
                 <img 
                   src={user.photo_url} 
@@ -285,19 +289,19 @@ const Profil: React.FC = () => {
           
           {/* İstatistikler */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
-            <div className="bg-surface border border-border/20 rounded-lg p-3 text-center">
+            <div className="bg-surface border border-primary/10 rounded-lg p-3 text-center">
               <Activity size={18} className="text-purple-400 mx-auto mb-1" />
               <p className="text-xs text-textSecondary mb-1">Görev Serisi</p>
               <p className="text-lg font-semibold text-text">{profileData.mission_streak || 0}</p>
             </div>
             
-            <div className="bg-surface border border-border/20 rounded-lg p-3 text-center">
+            <div className="bg-surface border border-primary/10 rounded-lg p-3 text-center">
               <Users size={18} className="text-blue-400 mx-auto mb-1" />
               <p className="text-xs text-textSecondary mb-1">Davet Ettiğin</p>
               <p className="text-lg font-semibold text-text">{profileData.invited_users_count || 0}</p>
             </div>
             
-            <div className="bg-surface border border-border/20 rounded-lg p-3 text-center">
+            <div className="bg-surface border border-primary/10 rounded-lg p-3 text-center">
               <Award size={18} className="text-amber-400 mx-auto mb-1" />
               <p className="text-xs text-textSecondary mb-1">Rozetler</p>
               <p className="text-lg font-semibold text-text">{profileData.badges?.length || 0}</p>
@@ -307,7 +311,7 @@ const Profil: React.FC = () => {
       </div>
       
       {/* Rozetler */}
-      <div className="bg-surface rounded-lg shadow-lg overflow-hidden mb-6">
+      <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden mb-6 card-glow">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-text flex items-center">
@@ -326,7 +330,7 @@ const Profil: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-textSecondary border border-dashed border-border rounded-lg">
+            <div className="text-center py-8 text-textSecondary border border-dashed border-primary/20 rounded-lg bg-surface/30">
               <Badge size={32} className="mx-auto mb-2 opacity-30" />
               <p>Henüz rozet kazanmadın</p>
               <p className="text-sm mt-1">Görevleri tamamlayarak rozetler kazanabilirsin</p>
@@ -336,8 +340,8 @@ const Profil: React.FC = () => {
       </div>
       
       {/* Davet linki (sadece Telegram bağlamında) */}
-      {isTelegramContext && (
-        <div className="bg-surface rounded-lg shadow-lg overflow-hidden mb-6">
+      {isTelegramContext ? (
+        <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden mb-6 card-glow">
           <div className="p-6">
             <h3 className="text-lg font-semibold text-text flex items-center mb-4">
               <Share2 size={18} className="text-primary mr-2" />
@@ -355,7 +359,7 @@ const Profil: React.FC = () => {
                 </p>
                 
                 {/* Davet linki */}
-                <div className="flex items-center bg-background rounded-lg border border-border p-2 mb-4 overflow-hidden">
+                <div className="flex items-center bg-background rounded-lg border border-primary/20 p-2 mb-4 overflow-hidden">
                   <input 
                     type="text" 
                     value={inviteInfo.invite_link}
@@ -386,34 +390,81 @@ const Profil: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-4 text-textSecondary">
-                <p>Davet bilgisi yüklenemedi.</p>
-                <Buton onClick={refreshInviteInfo} size="sm" variant="ghost" className="mt-2">
+              <div className="text-center py-4 text-textSecondary bg-surface/30 rounded-lg border border-primary/10">
+                <p className="mb-2">Davet bilgisi alınamıyor.</p>
+                <p className="text-xs mb-3">Telegram üzerinden giriş yapmış olmalısın.</p>
+                <Buton onClick={() => window.Telegram?.WebApp?.expand()} size="sm" variant="primary" className="mx-auto">
                   <RefreshCcw size={14} className="mr-1"/>
-                  Tekrar Dene
+                  Telegram'da Aç
                 </Buton>
               </div>
             )}
           </div>
         </div>
-      )}
-      
-      {/* Tamamlanan görevlerin hikayesi - Yakında */}
-      <div className="bg-surface/50 border border-primary/10 rounded-lg p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 m-4">
-          <div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-            Yakında
+      ) : (
+        <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden mb-6 card-glow">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-text flex items-center mb-4">
+              <Share2 size={18} className="text-primary mr-2" />
+              Arkadaşlarını Davet Et
+            </h3>
+            <div className="text-center py-4 text-textSecondary bg-surface/30 rounded-lg border border-primary/10">
+              <p className="mb-2">Davet bilgisi alınamıyor.</p>
+              <p className="text-xs mb-3">Telegram üzerinden giriş yapmış olmalısın.</p>
+            </div>
           </div>
         </div>
-        
-        <h3 className="text-lg font-semibold text-text flex items-center mb-4">
-          <Swords size={18} className="text-primary mr-2" />
-          Görev Hikayen
-        </h3>
-        
-        <p className="text-sm text-textSecondary">
-          Tamamladığın görevler burada bir hikaye olarak görüntülenecek.
-        </p>
+      )}
+      
+      {/* Tamamlanan görevlerin hikayesi */}
+      <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden card-glow relative">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-text flex items-center mb-4">
+            <Swords size={18} className="text-primary mr-2" />
+            Görev Hikayen
+          </h3>
+
+          {profileData.mission_stories && profileData.mission_stories.length > 0 ? (
+            <div className="space-y-4">
+              {profileData.mission_stories.map((story) => (
+                <div key={story.id} className="bg-surface/30 rounded-lg p-4 border border-primary/10">
+                  <div className="flex items-start">
+                    <div className="bg-primary/10 p-2 rounded-full mr-3">
+                      <Swords size={18} className="text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-textSecondary mb-1">
+                        {new Date(story.timestamp).toLocaleDateString('tr-TR', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      <p className="text-text">{story.story_text}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-surface/30 border border-primary/10 rounded-lg p-6 text-center">
+              <div className="bg-primary/10 p-3 rounded-full mx-auto mb-3 w-fit">
+                <Clock size={24} className="text-primary opacity-70" />
+              </div>
+              <p className="text-text font-medium mb-2">Henüz görev hikayen oluşmadı</p>
+              <p className="text-sm text-textSecondary">
+                Görevleri tamamladıkça burada hikaye oluşacak. Daha fazla görev tamamlamak için görevler sayfasını ziyaret et.
+              </p>
+              <Link to="/gorevler">
+                <Buton variant="secondary" className="mt-4">
+                  Görevlere Git
+                </Buton>
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
