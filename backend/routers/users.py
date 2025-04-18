@@ -36,57 +36,21 @@ def calculate_level_from_xp(xp: int) -> int:
         return max(4, round(xp / 100))
 
 # TODO: /profil/{uid} endpoint'i - EKLENDI
-@router.get("/profile/{uid}", response_model=Dict[str, Any], tags=["User Profile"])
+@router.get("/profile/{uid}", response_model=schemas.UserProfile)
 async def get_user_profile(uid: str, db: Session = Depends(get_db)):
-    """
-    Kullanıcı profil bilgilerini döndürür:
-    - XP, seviye, rozet listesi, görev serisi (streak)
-    """
-    try:
-        # Kullanıcıyı Telegram ID ile bul
-        telegram_id = int(uid)
-        user = crud.get_user_by_telegram_id(db, telegram_id=telegram_id)
-        if not user:
-            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
-        
-        # Kullanıcının rozetlerini al
-        badges = []
-        if hasattr(user, 'badges') and user.badges:
-            badges = [badge.badge.name for badge in user.badges]
-        
-        # XP değerine göre seviyeyi hesapla
-        level = calculate_level_from_xp(user.xp)
-        
-        # İstenen formatta yanıt döndür
-        return {
-            "uid": uid,
-            "xp": user.xp,
-            "level": level,
-            "streak": user.mission_streak,
-            "rozetler": badges
-        }
-    except ValueError:
-        # Telegram ID sayı değilse kullanıcı adını dene
-        user = crud.get_user_by_username(db, username=uid)
-        if not user:
-            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
-        
-        # Kullanıcının rozetlerini al
-        badges = []
-        if hasattr(user, 'badges') and user.badges:
-            badges = [badge.badge.name for badge in user.badges]
-        
-        # XP değerine göre seviyeyi hesapla
-        level = calculate_level_from_xp(user.xp)
-        
-        # İstenen formatta yanıt döndür
-        return {
-            "uid": uid,
-            "xp": user.xp,
-            "level": level,
-            "streak": user.mission_streak,
-            "rozetler": badges
-        }
+    # Numeric uid means user_id, otherwise it's a username
+    user = None
+    if uid.isdigit():
+        user = crud.get_user_profile(db, int(uid))
+    else:
+        user_obj = crud.get_user_by_username(db, uid)
+        if user_obj:
+            user = crud.get_user_profile(db, user_obj.id)
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user
 
 # TODO: /wallet/{uid} endpoint'i
 # TODO: /stars/use endpoint'i
@@ -225,57 +189,21 @@ async def get_my_invite_info(
 
 
 # Kullanıcının cüzdan bilgilerini kullanıcı adına göre döndüren endpoint
-@router.get("/wallet/{uid}", response_model=Dict[str, Any], tags=["User Wallet"])
+@router.get("/wallet/{uid}", response_model=schemas.UserWallet)
 async def get_user_wallet(uid: str, db: Session = Depends(get_db)):
-    """
-    Kullanıcının cüzdan bilgilerini döndürür:
-    - Stars (yıldız) bakiyesi
-    - Sahip olunan NFT ID'leri
-    - Toplam harcanan yıldızlar
-    """
-    try:
-        # Kullanıcıyı Telegram ID ile bul
-        telegram_id = int(uid)
-        user = crud.get_user_by_telegram_id(db, telegram_id=telegram_id)
-        if not user:
-            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
-        
-        # NFT ID'lerini al
-        nft_ids = []
-        if hasattr(user, 'nfts') and user.nfts:
-            nft_ids = [user_nft.nft_id for user_nft in user.nfts]
-        
-        # Toplam harcanan yıldızları transaction tablosundan hesapla
-        stars_spent = crud.get_user_stars_spent(db, user_id=user.id)
-        
-        # İstenen formatta yanıt döndür
-        return {
-            "uid": uid,
-            "stars": user.stars,
-            "nft_ids": nft_ids,
-            "stars_spent": stars_spent
-        }
-    except ValueError:
-        # Telegram ID sayı değilse kullanıcı adını dene
-        user = crud.get_user_by_username(db, username=uid)
-        if not user:
-            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {uid}")
-        
-        # NFT ID'lerini al
-        nft_ids = []
-        if hasattr(user, 'nfts') and user.nfts:
-            nft_ids = [user_nft.nft_id for user_nft in user.nfts]
-        
-        # Toplam harcanan yıldızları transaction tablosundan hesapla
-        stars_spent = crud.get_user_stars_spent(db, user_id=user.id)
-        
-        # İstenen formatta yanıt döndür
-        return {
-            "uid": uid,
-            "stars": user.stars,
-            "nft_ids": nft_ids,
-            "stars_spent": stars_spent
-        }
+    # Numeric uid means user_id, otherwise it's a username
+    user_wallet = None
+    if uid.isdigit():
+        user_wallet = crud.get_user_wallet(db, int(uid))
+    else:
+        user_obj = crud.get_user_by_username(db, uid)
+        if user_obj:
+            user_wallet = crud.get_user_wallet(db, user_obj.id)
+    
+    if not user_wallet:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user_wallet
 
 
 # Stars harcama endpoint'i (JWT korumalı)
@@ -619,3 +547,231 @@ async def get_user_missions(
 
 # Eski placeholder endpoint'leri kaldır
 # @router.get("/users/placeholder", ...) ... 
+
+@router.get("/me", response_model=schemas.User)
+async def read_user_me(
+    current_user: models.User = Depends(auth.get_current_active_user),
+):
+    """
+    Giriş yapmış kullanıcının temel bilgilerini getirir.
+    """
+    return current_user
+
+@router.get("/profile", response_model=schemas.UserProfile)
+async def read_user_profile(
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Kullanıcının detaylı profil bilgilerini getirir.
+    """
+    user_profile = crud.get_user_profile(db=db, user_id=current_user.id)
+    return user_profile
+
+@router.get("/wallet", response_model=schemas.UserWallet)
+async def read_user_wallet(
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Kullanıcının cüzdan bilgilerini getirir.
+    """
+    user_wallet = crud.get_user_wallet(db=db, user_id=current_user.id)
+    return user_wallet
+
+@router.get("/daily-bonus", response_model=schemas.DailyBonusStatus)
+async def check_daily_bonus_status(
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Kullanıcının günlük bonus durumunu kontrol eder.
+    """
+    last_claim = crud.get_last_daily_bonus_claim(db=db, user_id=current_user.id)
+    
+    # 24 saatlik hesaplama
+    now = datetime.now()
+    can_claim = True
+    seconds_until_next = 0
+    
+    if last_claim:
+        next_claim_time = last_claim.claim_date + timedelta(days=1)
+        if now < next_claim_time:
+            can_claim = False
+            seconds_until_next = int((next_claim_time - now).total_seconds())
+    
+    # Ödül miktarları hesaplanır (streak'e göre artar)
+    current_streak = 0 if not last_claim else last_claim.day_streak
+    
+    if last_claim:
+        # Eğer son claim'den bu yana 48 saatten fazla geçtiyse streak sıfırlanır
+        streak_reset_time = last_claim.claim_date + timedelta(days=2)
+        if now > streak_reset_time and not can_claim:
+            current_streak = 0
+    
+    # Günlük ödüller (streak'e göre artar)
+    base_xp = 50
+    base_stars = 10
+    
+    # Her 5 günde bir artan ödüller
+    streak_multiplier = 1 + (current_streak // 5) * 0.2  # Her 5 günde %20 artış
+    
+    xp_reward = int(base_xp * streak_multiplier)
+    stars_reward = int(base_stars * streak_multiplier)
+    
+    # Uzun streak bonusu - NFT
+    streak_reward_nft = None
+    if current_streak + 1 in [7, 14, 30, 60, 90]:  # 7, 14, 30, 60, 90 günlük özel ödüller
+        special_nft = crud.get_streak_reward_nft(db=db, streak_day=current_streak + 1)
+        if special_nft:
+            streak_reward_nft = special_nft
+    
+    return schemas.DailyBonusStatus(
+        can_claim=can_claim,
+        current_streak=current_streak,
+        time_until_next_claim_seconds=seconds_until_next if not can_claim else None,
+        today_reward_xp=xp_reward if can_claim else None,
+        today_reward_stars=stars_reward if can_claim else None,
+        streak_reward_nft=streak_reward_nft if can_claim else None
+    )
+
+@router.post("/claim-daily-bonus", response_model=schemas.ClaimDailyBonusResponse)
+async def claim_daily_bonus(
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Günlük bonusu talep eder.
+    """
+    # Önce durumu kontrol et
+    last_claim = crud.get_last_daily_bonus_claim(db=db, user_id=current_user.id)
+    
+    now = datetime.now()
+    can_claim = True
+    current_streak = 0
+    
+    if last_claim:
+        next_claim_time = last_claim.claim_date + timedelta(days=1)
+        if now < next_claim_time:
+            raise HTTPException(
+                status_code=400, 
+                detail="Günlük bonusu henüz talep edemezsiniz. Lütfen daha sonra tekrar deneyin."
+            )
+        
+        # Streak hesaplama - eğer son claim'den bu yana 48 saatten fazla geçtiyse sıfırlanır
+        streak_reset_time = last_claim.claim_date + timedelta(days=2)
+        if now > streak_reset_time:
+            current_streak = 0
+        else:
+            current_streak = last_claim.day_streak
+    
+    # Yeni streak değeri
+    new_streak = current_streak + 1
+    
+    # Ödül hesaplama
+    base_xp = 50
+    base_stars = 10
+    streak_multiplier = 1 + (current_streak // 5) * 0.2
+    
+    xp_reward = int(base_xp * streak_multiplier)
+    stars_reward = int(base_stars * streak_multiplier)
+    
+    # Kullanıcıya XP ve Stars ekle
+    user_updated = crud.add_user_xp_and_stars(
+        db=db, 
+        user_id=current_user.id, 
+        xp_amount=xp_reward, 
+        stars_amount=stars_reward,
+        reason="daily_bonus"
+    )
+    
+    # Talep kaydı oluştur
+    claim = models.DailyBonusClaim(
+        user_id=current_user.id,
+        day_streak=new_streak
+    )
+    db.add(claim)
+    
+    # Özel gün NFT ödülü
+    claimed_nft = None
+    if new_streak in [7, 14, 30, 60, 90]:
+        special_nft = crud.get_streak_reward_nft(db=db, streak_day=new_streak)
+        if special_nft:
+            user_nft = crud.add_nft_to_user(
+                db=db, 
+                user_id=current_user.id, 
+                nft_id=special_nft.id, 
+                price=0
+            )
+            claimed_nft = special_nft
+    
+    db.commit()
+    
+    return schemas.ClaimDailyBonusResponse(
+        message=f"Günlük bonus başarıyla alındı! {new_streak} günlük seri devam ediyor.",
+        claimed_xp=xp_reward,
+        claimed_stars=stars_reward,
+        claimed_nft=claimed_nft,
+        new_streak=new_streak
+    )
+
+@router.get("/invite-info", response_model=schemas.InviteInfoResponse)
+async def get_invite_info(
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Kullanıcının davet bilgilerini getirir.
+    """
+    successful_invites = current_user.invited_users_count
+    invite_link = f"https://t.me/ArayisBot?start={current_user.telegram_id}"
+    reward_per_invite = 25  # Her davet için sabit ödül
+    
+    return schemas.InviteInfoResponse(
+        invite_link=invite_link,
+        successful_invites=successful_invites,
+        reward_per_invite_stars=reward_per_invite
+    )
+
+@router.post("/use-stars", response_model=schemas.UseStarsResponse)
+async def use_stars(
+    request: schemas.UseStarsRequest,
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Stars kullanır (genel fonksiyon).
+    """
+    if not current_user.stars_enabled:
+        raise HTTPException(status_code=400, detail="Stars özelliği hesabınızda aktif değil.")
+    
+    if current_user.stars < request.amount:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Yeterli Stars'ınız yok. Gereken: {request.amount}, Mevcut: {current_user.stars}"
+        )
+    
+    try:
+        # Stars'ları düş
+        current_user.stars -= request.amount
+        
+        # İşlem kaydı oluştur
+        crud.create_star_transaction(
+            db=db,
+            user_id=current_user.id,
+            amount=-request.amount,
+            transaction_type=models.TransactionType.DEBIT,
+            reason=request.reason,
+            description=f"{request.amount} Stars kullanıldı: {request.reason}"
+        )
+        
+        db.commit()
+        
+        return schemas.UseStarsResponse(
+            message=f"{request.amount} Stars başarıyla kullanıldı!",
+            remaining_stars=current_user.stars
+        )
+    except Exception as e:
+        db.rollback()
+        print(f"Error using stars for user {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail="Stars kullanılırken bir hata oluştu.") 

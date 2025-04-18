@@ -103,8 +103,12 @@ const Profil: React.FC = () => {
     setError(null);
     
     try {
+      // Telegram ID'si veya default demo123 ID kullan
+      const userId = getTelegramUserId()?.toString() || "demo123";
+      console.log("Profil sayfası yükleniyor, userId:", userId);
+      
       // Kullanıcı profil bilgilerini al
-      const profileData = await fetchUserProfile(getTelegramUserId()?.toString() || "");
+      const profileData = await fetchUserProfile(userId);
       setProfileData(profileData);
       triggerHapticFeedback('success');
       
@@ -236,11 +240,11 @@ const Profil: React.FC = () => {
       <SayfaBasligi title="Profil" icon={User} />
       
       {/* Profil kartı */}
-      <div className="bg-surface rounded-lg shadow-lg overflow-hidden mb-6">
+      <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden mb-6 card-glow">
         <div className="p-6">
           {/* Kullanıcı adı ve avatar */}
           <div className="flex items-center mb-6">
-            <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center text-primary">
+            <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center text-primary p-1 border border-primary/30">
               {user?.photo_url ? (
                 <img 
                   src={user.photo_url} 
@@ -248,150 +252,218 @@ const Profil: React.FC = () => {
                   className="w-full h-full rounded-full object-cover" 
                 />
               ) : (
-                <User size={32} />
+                <User size={24} />
               )}
             </div>
             <div className="ml-4">
-              <h2 className="text-xl font-bold">
-                {user?.first_name || profileData.username || "Kullanıcı"}
+              <h2 className="text-xl font-bold text-text">
+                {profileData.username || user?.first_name || "Misafir"}
               </h2>
-              <p className="text-textSecondary text-sm">
-                UID: {profileData.telegram_id || getTelegramUserId()}
-              </p>
+              <div className="flex items-center">
+                <span className={`text-sm ${getUserRole(profileData.level).color}`}>
+                  {getUserRole(profileData.level).name}
+                </span>
+                <span className="mx-2 text-textMuted">•</span>
+                <span className="text-sm text-textSecondary">
+                  Seviye {profileData.level}
+                </span>
+              </div>
             </div>
           </div>
           
-          {/* XP Bar */}
+          {/* XP Progress Bar */}
           <div className="mb-6">
-            <div className="flex justify-between mb-1">
-              <span className="text-lg font-semibold flex items-center">
-                Seviye {profileData.level}
-                <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
-                  {profileData.xp} XP
-                </span>
-              </span>
-              <span className="text-sm text-textSecondary">
-                Sonraki seviye: {nextLevelXp} XP
-              </span>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-textSecondary">XP: {profileData.xp}</span>
+              <span className="text-sm text-textSecondary">Sonraki seviye: {nextLevelXp}</span>
             </div>
             <XPBar progress={progress} />
           </div>
           
-          {/* Streak ve rozetler */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
-            {/* Streak bilgisi */}
-            <div className="bg-muted/40 p-4 rounded-lg flex items-center">
-              <div className="bg-secondary/10 rounded-full w-10 h-10 flex items-center justify-center text-secondary mr-4">
-                <Star size={20} />
-              </div>
-              <div>
-                <h3 className="font-medium">Görev Serisi</h3>
-                <p className="text-2xl font-bold">{profileData.mission_streak || 0} gün</p>
-              </div>
+          {/* Stars Balance */}
+          {profileData.stars_enabled && (
+            <div className="mb-6">
+              <StarsBalance balance={profileData.stars} className="justify-start" />
+            </div>
+          )}
+          
+          {/* İstatistikler */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+            <div className="bg-surface border border-primary/10 rounded-lg p-3 text-center">
+              <Activity size={18} className="text-purple-400 mx-auto mb-1" />
+              <p className="text-xs text-textSecondary mb-1">Görev Serisi</p>
+              <p className="text-lg font-semibold text-text">{profileData.mission_streak || 0}</p>
             </div>
             
-            {/* Rozet sayısı */}
-            <div className="bg-muted/40 p-4 rounded-lg flex items-center">
-              <div className="bg-amber-500/10 rounded-full w-10 h-10 flex items-center justify-center text-amber-500 mr-4">
-                <Award size={20} />
-              </div>
-              <div>
-                <h3 className="font-medium">Rozetler</h3>
-                <p className="text-2xl font-bold">{profileData.badges?.length || 0} adet</p>
-              </div>
+            <div className="bg-surface border border-primary/10 rounded-lg p-3 text-center">
+              <Users size={18} className="text-blue-400 mx-auto mb-1" />
+              <p className="text-xs text-textSecondary mb-1">Davet Ettiğin</p>
+              <p className="text-lg font-semibold text-text">{profileData.invited_users_count || 0}</p>
+            </div>
+            
+            <div className="bg-surface border border-primary/10 rounded-lg p-3 text-center">
+              <Award size={18} className="text-amber-400 mx-auto mb-1" />
+              <p className="text-xs text-textSecondary mb-1">Rozetler</p>
+              <p className="text-lg font-semibold text-text">{profileData.badges?.length || 0}</p>
             </div>
           </div>
         </div>
       </div>
       
       {/* Rozetler */}
-      {profileData.badges && profileData.badges.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 flex items-center">
-            <Award size={18} className="mr-2 text-amber-500" />
-            Kazanılan Rozetler
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {profileData.badges.map((badge, index) => (
-              <div key={index} className="bg-surface p-3 rounded-lg flex flex-col items-center text-center">
-                <div className="w-14 h-14 mb-2">
-                  {badge.badge_image_url ? (
-                    <img 
-                      src={badge.badge_image_url} 
-                      alt={badge.badge_name} 
-                      className="w-full h-full object-contain" 
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-amber-500/10 rounded-full flex items-center justify-center">
-                      <Award size={24} className="text-amber-500" />
-                    </div>
-                  )}
-                </div>
-                <h4 className="font-medium text-sm mb-1">{badge.badge_name}</h4>
-                <p className="text-textSecondary text-xs">
-                  {new Date(badge.earned_at).toLocaleDateString()}
-                </p>
+      <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden mb-6 card-glow">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-text flex items-center">
+              <Badge size={18} className="text-primary mr-2" />
+              Kazanılan Rozetler
+            </h3>
+            {profileData.badges && profileData.badges.length > 0 && (
+              <span className="text-sm text-textSecondary">{profileData.badges.length} rozet</span>
+            )}
+          </div>
+          
+          {profileData.badges && profileData.badges.length > 0 ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 justify-items-center">
+              {profileData.badges.map((badge) => (
+                <RozetKarti key={badge.badge_id} badge={badge} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-textSecondary border border-dashed border-primary/20 rounded-lg bg-surface/30">
+              <Badge size={32} className="mx-auto mb-2 opacity-30" />
+              <p>Henüz rozet kazanmadın</p>
+              <p className="text-sm mt-1">Görevleri tamamlayarak rozetler kazanabilirsin</p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Davet linki (sadece Telegram bağlamında) */}
+      {isTelegramContext ? (
+        <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden mb-6 card-glow">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-text flex items-center mb-4">
+              <Share2 size={18} className="text-primary mr-2" />
+              Arkadaşlarını Davet Et
+            </h3>
+            
+            {inviteLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="animate-spin text-primary" size={24} />
               </div>
-            ))}
+            ) : inviteInfo ? (
+              <div>
+                <p className="text-sm text-textSecondary mb-3">
+                  Davet ettiğin her arkadaş için {inviteInfo.reward_per_invite_stars} Stars kazanırsın.
+                </p>
+                
+                {/* Davet linki */}
+                <div className="flex items-center bg-background rounded-lg border border-primary/20 p-2 mb-4 overflow-hidden">
+                  <input 
+                    type="text" 
+                    value={inviteInfo.invite_link}
+                    readOnly
+                    className="bg-transparent border-none outline-none text-sm flex-grow text-textSecondary px-2 truncate"
+                  />
+                  <Buton 
+                    onClick={copyInviteLink} 
+                    variant="ghost" 
+                    size="sm"
+                    className="flex-shrink-0 ml-2 relative"
+                  >
+                    {linkCopied ? (
+                      <Check size={16} className="text-success" />
+                    ) : (
+                      <Copy size={16} />
+                    )}
+                  </Buton>
+                </div>
+                
+                {/* Davet bilgisi */}
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-textSecondary">Toplam başarılı davet: {inviteInfo.successful_invites}</span>
+                  <Buton onClick={refreshInviteInfo} size="sm" variant="ghost" className="text-primary">
+                    <RefreshCcw size={14} className="mr-1"/>
+                    Yenile
+                  </Buton>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-textSecondary bg-surface/30 rounded-lg border border-primary/10">
+                <p className="mb-2">Davet bilgisi alınamıyor.</p>
+                <p className="text-xs mb-3">Telegram üzerinden giriş yapmış olmalısın.</p>
+                <Buton onClick={() => window.Telegram?.WebApp?.expand()} size="sm" variant="primary" className="mx-auto">
+                  <RefreshCcw size={14} className="mr-1"/>
+                  Telegram'da Aç
+                </Buton>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden mb-6 card-glow">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-text flex items-center mb-4">
+              <Share2 size={18} className="text-primary mr-2" />
+              Arkadaşlarını Davet Et
+            </h3>
+            <div className="text-center py-4 text-textSecondary bg-surface/30 rounded-lg border border-primary/10">
+              <p className="mb-2">Davet bilgisi alınamıyor.</p>
+              <p className="text-xs mb-3">Telegram üzerinden giriş yapmış olmalısın.</p>
+            </div>
           </div>
         </div>
       )}
       
-      {/* Davet kartı */}
-      <div className="bg-surface rounded-lg shadow-lg overflow-hidden mb-6">
+      {/* Tamamlanan görevlerin hikayesi */}
+      <div className="bg-card-gradient rounded-lg shadow-lg overflow-hidden card-glow relative">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <Users size={20} className="mr-2" />
-              Davet Sistemi
-            </h3>
-            <Buton
-              onClick={refreshInviteInfo}
-              variant="ghost"
-              size="sm"
-              disabled={inviteLoading}
-            >
-              {inviteLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <RefreshCcw size={16} />
-              )}
-            </Buton>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-textSecondary">Başarılı Davetler</span>
-              <span className="font-semibold">{inviteInfo?.successful_invites || 0}</span>
+          <h3 className="text-lg font-semibold text-text flex items-center mb-4">
+            <Swords size={18} className="text-primary mr-2" />
+            Görev Hikayen
+          </h3>
+
+          {profileData.mission_stories && profileData.mission_stories.length > 0 ? (
+            <div className="space-y-4">
+              {profileData.mission_stories.map((story) => (
+                <div key={story.id} className="bg-surface/30 rounded-lg p-4 border border-primary/10">
+                  <div className="flex items-start">
+                    <div className="bg-primary/10 p-2 rounded-full mr-3">
+                      <Swords size={18} className="text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-textSecondary mb-1">
+                        {new Date(story.timestamp).toLocaleDateString('tr-TR', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      <p className="text-text">{story.story_text}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={inviteInfo?.invite_link || ''}
-                readOnly
-                className="flex-1 p-2 bg-background border border-border rounded text-sm"
-              />
-              <Buton
-                onClick={copyInviteLink}
-                variant="primary"
-                size="sm"
-                className="min-w-[100px]"
-              >
-                {linkCopied ? (
-                  <>
-                    <CheckCircle size={16} className="mr-1" />
-                    Kopyalandı
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} className="mr-1" />
-                    Kopyala
-                  </>
-                )}
-              </Buton>
+          ) : (
+            <div className="bg-surface/30 border border-primary/10 rounded-lg p-6 text-center">
+              <div className="bg-primary/10 p-3 rounded-full mx-auto mb-3 w-fit">
+                <Clock size={24} className="text-primary opacity-70" />
+              </div>
+              <p className="text-text font-medium mb-2">Henüz görev hikayen oluşmadı</p>
+              <p className="text-sm text-textSecondary">
+                Görevleri tamamladıkça burada hikaye oluşacak. Daha fazla görev tamamlamak için görevler sayfasını ziyaret et.
+              </p>
+              <Link to="/gorevler">
+                <Buton variant="secondary" className="mt-4">
+                  Görevlere Git
+                </Buton>
+              </Link>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

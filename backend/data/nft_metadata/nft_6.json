@@ -1,0 +1,15 @@
+{
+  "id": 6,
+  "name": "Flörtör",
+  "category": "general",
+  "level": 1,
+  "video": "/assets/nft/NFT-flirt.mp4",
+  "image": "/assets/nft/NFT-flirt.mp4",
+  "description": "Flört yeteneklerini ve ödüllerini artırır.",
+  "price": 12500,
+  "rarity": "rare",
+  "benefits": [
+    "Flört yetenekleriniz %30 daha etkili",
+    "Özel eşleşme görünürlüğü"
+  ]
+}

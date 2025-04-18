@@ -1,0 +1,123 @@
+[
+  {
+    "id": 1,
+    "name": "Gözcü",
+    "category": "general",
+    "level": 1,
+    "video": "/assets/nft/NFT-watcher.mp4",
+    "image": "/assets/nft/NFT-watcher.mp4",
+    "description": "Görevleri görebilir ve takip edebilirsin.",
+    "price": 1000,
+    "rarity": "common",
+    "benefits": [
+      "Görevleri görebilir ve izleyebilir",
+      "Günlük %5 daha fazla yıldız"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Savaşçı",
+    "category": "general",
+    "level": 1,
+    "video": "/assets/nft/NFT-warrior.mp4",
+    "image": "/assets/nft/NFT-warrior.mp4",
+    "description": "Zorlu görevlerin üstesinden gelebilirsin.",
+    "price": 2500,
+    "rarity": "common",
+    "benefits": [
+      "Zorlu görevlerin kilidini açar",
+      "Günlük %10 daha fazla yıldız"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Kahin",
+    "category": "general",
+    "level": 1,
+    "video": "/assets/nft/NFT-oracle.mp4",
+    "image": "/assets/nft/NFT-oracle.mp4",
+    "description": "Gelecekteki görevleri tahmin edebilirsin.",
+    "price": 5000,
+    "rarity": "uncommon",
+    "benefits": [
+      "Gelecekteki görevleri önceden görebilir",
+      "DAO oylamalarında %5 daha fazla oy gücü"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Hacker",
+    "category": "general",
+    "level": 1,
+    "video": "/assets/nft/NFT-hacker.mp4",
+    "image": "/assets/nft/NFT-hacker.mp4",
+    "description": "Sistemle etkileşimini güçlendirir.",
+    "price": 7500,
+    "rarity": "uncommon",
+    "benefits": [
+      "Sistem etkileşiminiz %20 daha güçlü",
+      "Her gün ekstra XP kazanımı"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Koruyucu",
+    "category": "general",
+    "level": 1,
+    "video": "/assets/nft/NFT-guardian.mp4",
+    "image": "/assets/nft/NFT-guardian.mp4",
+    "description": "Diğer kullanıcıları koruma yeteneği kazandırır.",
+    "price": 10000,
+    "rarity": "rare",
+    "benefits": [
+      "Diğer kullanıcıları koruyabilir",
+      "Özel alan görevlerine erişim"
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Flörtör",
+    "category": "general",
+    "level": 1,
+    "video": "/assets/nft/NFT-flirt.mp4",
+    "image": "/assets/nft/NFT-flirt.mp4",
+    "description": "Flört yeteneklerini ve ödüllerini artırır.",
+    "price": 12500,
+    "rarity": "rare",
+    "benefits": [
+      "Flört yetenekleriniz %30 daha etkili",
+      "Özel eşleşme görünürlüğü"
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Şehir",
+    "category": "general",
+    "level": 1,
+    "video": "/assets/nft/NFT-city.mp4",
+    "image": "/assets/nft/NFT-city.mp4",
+    "description": "Sanal şehirde mülk sahibi olursun.",
+    "price": 15000,
+    "rarity": "epic",
+    "benefits": [
+      "Sanal şehirde mülk sahibi olun",
+      "Bölgesel etkinliklerde ayrıcalıklar"
+    ]
+  },
+  {
+    "id": 8,
+    "name": "DAO Üyesi",
+    "category": "vote-premium",
+    "level": 1,
+    "video": "/assets/nft/NFT-DAO.mp4",
+    "image": "/assets/nft/NFT-DAO.mp4",
+    "description": "DAO'da oy kullanma haklarına sahip olursun.",
+    "price": 20000,
+    "rarity": "legendary",
+    "benefits": [
+      "DAO'da premium oy hakkı",
+      "Özel içeriklere erişim",
+      "Topluluğu yönetme yetkisi"
+    ]
+  }
+]

@@ -11,6 +11,8 @@ import { useTelegram } from '../contexts/TelegramContext';
 import { fetchMissions, completeMission } from '../utils/api';
 import { Mission, CompleteMissionResponse } from '../types';
 import { triggerHapticFeedback, showNotification } from '../utils/hapticFeedback';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 
 // Kategori ikonları
 const categoryIcons: Record<string, React.ElementType> = {
@@ -30,6 +32,8 @@ const Gorevler: React.FC = () => {
   const [completingMissionId, setCompletingMissionId] = useState<number | null>(null);
   const [completionStatus, setCompletionStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [xpAnimation, setXpAnimation] = useState<{ amount: number, visible: boolean }>({ amount: 0, visible: false });
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { width, height } = useWindowSize();
 
   // Görevleri fetch eden fonksiyon
   const fetchUserMissions = async () => {
@@ -64,6 +68,12 @@ const Gorevler: React.FC = () => {
       triggerHapticFeedback('medium');
       const result = await completeMission(missionId);
       
+      // Konfeti animasyonu göster
+      setShowConfetti(true);
+      setTimeout(() => {
+        setShowConfetti(false);
+      }, 4000);
+      
       // XP animasyonu göster
       if (result.xp_gained && result.xp_gained > 0) {
         setXpAnimation({ 
@@ -80,7 +90,7 @@ const Gorevler: React.FC = () => {
       showNotification('success');
       
       setCompletionStatus({ 
-        message: `Görev tamamlandı! +${result.xp_gained || result.new_xp} XP kazandın!${result.level_up ? ' ✨ Seviye atladın!' : ''}`, 
+        message: `Görev tamamlandı! +${result.xp_gained || result.new_xp} XP kazandın!${result.level_up ? ' ✨ Seviye atladın!' : ''}${result.earned_badge ? ' 🏆 Yeni rozet kazandın!' : ''}`, 
         type: 'success' 
       });
 
@@ -137,10 +147,21 @@ const Gorevler: React.FC = () => {
     <div className="p-4 max-w-4xl mx-auto pb-20">
       <SayfaBasligi title="Aktif Görevler" icon={Swords} />
 
+      {/* Konfeti Animasyonu */}
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.2}
+        />
+      )}
+
       {/* XP Animasyonu */}
       {xpAnimation.visible && (
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className="text-3xl font-bold text-primary animate-bounce-up-and-fade">
+          <div className="text-4xl font-bold text-primary animate-bounce-up-and-fade">
             +{xpAnimation.amount} XP
           </div>
         </div>
@@ -191,20 +212,20 @@ const Gorevler: React.FC = () => {
               return (
                 <div 
                   key={gorev.id} 
-                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg shadow-sm transition-all ${isLocked ? 'bg-muted/50 border-border/50 opacity-70' : 'bg-card border-border hover:shadow-md'}`}
+                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg shadow-sm transition-all ${isLocked ? 'bg-surface/50 border-surface/50 opacity-70' : 'bg-surface border-surface/20 hover:shadow-md'}`}
                 > 
                   <div className="flex items-center mr-4 overflow-hidden flex-grow mb-3 sm:mb-0"> 
-                      <Icon size={24} className={`mr-4 flex-shrink-0 ${isLocked ? 'text-textMuted' : 'text-primary'}`}/> 
+                      <Icon size={24} className={`mr-4 flex-shrink-0 ${isLocked ? 'text-text-secondary' : 'text-primary'}`}/> 
                       <div className="flex-grow"> 
-                          <h3 className={`text-md font-semibold ${isLocked ? 'text-textMuted' : 'text-text'} truncate`} title={gorev.title}>{gorev.title}</h3> 
-                          <p className={`text-sm ${isLocked ? 'text-textMuted' : 'text-textSecondary'} whitespace-normal`}>{gorev.description}</p> 
+                          <h3 className={`text-md font-semibold ${isLocked ? 'text-text-secondary' : 'text-text'} truncate`} title={gorev.title}>{gorev.title}</h3> 
+                          <p className={`text-sm ${isLocked ? 'text-text-secondary/70' : 'text-text-secondary'} whitespace-normal`}>{gorev.description}</p> 
                       </div> 
                   </div> 
 
                   <div className="text-right ml-auto flex-shrink-0 flex flex-col sm:flex-row items-end sm:items-center w-full sm:w-auto"> 
-                      <p className={`text-lg font-bold ${isLocked ? 'text-textMuted' : 'text-primary'} mr-0 sm:mr-4 mb-2 sm:mb-0`}>+{gorev.xp_reward} XP</p> 
+                      <p className={`text-lg font-bold ${isLocked ? 'text-text-secondary' : 'text-primary'} mr-0 sm:mr-4 mb-2 sm:mb-0`}>+{gorev.xp_reward} XP</p> 
                       {isLocked ? (
-                          <div className="flex items-center text-xs text-textMuted px-2 py-1 bg-background rounded border border-border">
+                          <div className="flex items-center text-xs text-text-secondary px-2 py-1 bg-background rounded border border-surface">
                               <Lock size={14} className="mr-1.5" />
                               {gorev.required_nft_id 
                                 ? `${getReadableCategoryName(gorev.category || null)} NFT Gerekli` 

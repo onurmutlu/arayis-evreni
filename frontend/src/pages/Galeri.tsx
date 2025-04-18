@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SayfaBasligi from '../components/SayfaBasligi';
 import NFTKarti from '../components/NFTKarti';
-import { Gem, Loader2, AlertCircle, Lock, Star, Info, CheckCircle, Crown } from 'lucide-react';
+import { Gem, Loader2, AlertCircle, Lock, Star, Info, CheckCircle, Crown, RefreshCw } from 'lucide-react';
 import { mockNFTData, convertToNftType } from '../data/nftData';
 import { Nft, NFTCategory, UserProfile } from '../types';
 import { fetchUserWallet, fetchUserProfile, fetchAllNfts, buyNft, fetchOwnedNfts, mintNft } from '../utils/api';
@@ -27,65 +27,72 @@ const Galeri: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isUserDataLoading, setIsUserDataLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const { getTelegramUserId } = useTelegram();
 
   // Başlangıçta NFT verilerini ve kullanıcı bilgilerini getir
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setIsUserDataLoading(true);
-      setError(null);
+  const loadData = async () => {
+    setLoading(true);
+    setIsUserDataLoading(true);
+    setError(null);
+    
+    try {
+      // API çağrılarını paralel olarak yap
+      const [walletData, profileData, nftsData, userOwnedNfts] = await Promise.all([
+        fetchUserWallet(),
+        fetchUserProfile(),
+        fetchAllNfts(),
+        fetchOwnedNfts()
+      ]);
       
-      try {
-        // API çağrılarını paralel olarak yap
-        const [walletData, profileData, nftsData, userOwnedNfts] = await Promise.all([
-          fetchUserWallet(),
-          fetchUserProfile(),
-          fetchAllNfts(),
-          fetchOwnedNfts()
-        ]);
-        
-        // Kullanıcı cüzdanı verilerini ayarla
-        if (walletData) {
-          setUserStars(walletData.stars);
-        }
-        
-        // Kullanıcı profili verilerini ayarla
-        if (profileData) {
-          setUserProfile(profileData);
-        }
-        
-        // NFT verilerini ayarla
-        if (nftsData && nftsData.length > 0) {
-          setNfts(nftsData);
-          triggerHapticFeedback('success');
-        } else {
-          // API'den veri alınamazsa mock veri kullanılıyor
-          console.warn("API'den NFT verileri alınamadı, mock veri kullanılıyor.");
-          const convertedNfts: Nft[] = mockNFTData.map(convertToNftType);
-          setNfts(convertedNfts);
-          showNotification('warning', 'NFT verileri yüklenemedi, demo veriler gösteriliyor.');
-        }
-        
-        // Sahip olunan NFT'leri ayarla
-        setOwnedNfts(userOwnedNfts);
-      } catch (err: any) {
-        console.error('Veri yüklenirken hata:', err);
-        setError("Veriler yüklenemedi. Lütfen sayfayı yenileyin.");
-        triggerHapticFeedback('error');
-        showNotification('error', 'Veriler yüklenemedi. Lütfen sayfayı yenileyin.');
-        
-        // API çağrıları başarısız olsa bile mock veriyi göster
+      // Kullanıcı cüzdanı verilerini ayarla
+      if (walletData) {
+        setUserStars(walletData.stars);
+      }
+      
+      // Kullanıcı profili verilerini ayarla
+      if (profileData) {
+        setUserProfile(profileData);
+      }
+      
+      // NFT verilerini ayarla
+      if (nftsData && nftsData.length > 0) {
+        setNfts(nftsData);
+        triggerHapticFeedback('success');
+      } else {
+        // API'den veri alınamazsa mock veri kullanılıyor
+        console.warn("API'den NFT verileri alınamadı, mock veri kullanılıyor.");
         const convertedNfts: Nft[] = mockNFTData.map(convertToNftType);
         setNfts(convertedNfts);
-      } finally {
-        setLoading(false);
-        setIsUserDataLoading(false);
+        showNotification('warning', 'NFT verileri yüklenemedi, demo veriler gösteriliyor.');
       }
-    };
+      
+      // Sahip olunan NFT'leri ayarla
+      setOwnedNfts(userOwnedNfts);
+    } catch (err: any) {
+      console.error('Veri yüklenirken hata:', err);
+      setError("Veriler yüklenemedi. Lütfen sayfayı yenileyin.");
+      triggerHapticFeedback('error');
+      showNotification('error', 'Veriler yüklenemedi. Lütfen sayfayı yenileyin.');
+      
+      // API çağrıları başarısız olsa bile mock veriyi göster
+      const convertedNfts: Nft[] = mockNFTData.map(convertToNftType);
+      setNfts(convertedNfts);
+    } finally {
+      setLoading(false);
+      setIsUserDataLoading(false);
+      setRefreshing(false);
+    }
+  };
 
+  useEffect(() => {
     loadData();
   }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadData();
+  };
 
   // Normal NFT'ler ve Sora özel koleksiyonunu ayır
   const standardNfts = nfts.filter(nft => !nft.is_elite);
@@ -189,11 +196,21 @@ const Galeri: React.FC = () => {
   const hasSoraAccess = userProfile ? userProfile.level >= 5 : false;
 
   return (
-    <div className="p-4 max-w-6xl mx-auto pb-20">
-      <SayfaBasligi title="NFT Galerisi" icon={Gem} />
+    <div className="p-4 max-w-6xl mx-auto pb-20 bg-surface">
+      <div className="flex justify-between items-center mb-4">
+        <SayfaBasligi title="NFT Galerisi" icon={Gem} />
+        <button 
+          onClick={handleRefresh} 
+          className="bg-primary hover:bg-primary-dark text-white px-3 py-1.5 rounded-lg flex items-center shadow-sm transition-all duration-200"
+          disabled={refreshing}
+        >
+          <RefreshCw size={18} className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Yenileniyor...' : 'Yenile'}
+        </button>
+      </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-error/10 text-error rounded-md text-center flex items-center justify-center">
+        <div className="mb-4 p-3 bg-error/10 text-error rounded-md text-center flex items-center justify-center shadow-sm border border-error/20">
           <AlertCircle size={18} className="mr-2" />
           {error}
         </div>
@@ -201,41 +218,57 @@ const Galeri: React.FC = () => {
 
       {/* Kullanıcı bilgileri */}
       {!isUserDataLoading && userProfile && (
-        <div className="mb-6 flex flex-wrap justify-between items-center">
-          <div className="flex items-center bg-surface px-4 py-2 rounded-lg shadow-sm border border-border">
-            <span className="font-medium mr-2">@{userProfile.username}</span>
-            <span className="text-primary font-bold">Seviye {userProfile.level}</span>
+        <div className="mb-6 flex flex-wrap justify-between items-center bg-gradient-to-r from-surface-dark to-surface p-4 rounded-xl shadow-md border border-border">
+          <div className="flex items-center">
+            <div className="bg-primary/20 p-2 rounded-full mr-3">
+              <Crown className="text-primary" size={22} />
+            </div>
+            <div>
+              <div className="text-sm text-textSecondary">Kullanıcı</div>
+              <div className="font-medium">@{userProfile.username}</div>
+            </div>
           </div>
           
-          <div className="flex items-center bg-surface px-3 py-1.5 rounded-lg shadow-sm border border-border mt-2 sm:mt-0">
-            <span className="text-amber-400 font-bold mr-1">⭐</span>
-            <span className="font-medium">{userStars}</span>
+          <div className="flex gap-4 mt-3 sm:mt-0">
+            <div className="flex flex-col items-center bg-surface px-3 py-2 rounded-lg shadow-inner border border-border">
+              <div className="text-sm text-textSecondary">Seviye</div>
+              <div className="font-bold text-primary">{userProfile.level}</div>
+            </div>
+            
+            <div className="flex flex-col items-center bg-surface px-3 py-2 rounded-lg shadow-inner border border-border">
+              <div className="text-sm text-textSecondary">Stars</div>
+              <div className="font-bold text-amber-400 flex items-center">
+                <Star size={14} className="mr-1 fill-amber-400" />
+                {userStars}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 size={36} className="animate-spin text-primary" />
-          <span className="ml-3 text-textSecondary">NFT'ler yükleniyor...</span>
+        <div className="flex flex-col justify-center items-center py-12 bg-surface-dark rounded-xl shadow-md">
+          <Loader2 size={36} className="animate-spin text-primary mb-3" />
+          <span className="text-textSecondary">NFT'ler yükleniyor...</span>
         </div>
       ) : nfts.length === 0 ? (
-        <div className="text-center mt-8 text-textSecondary">
+        <div className="text-center mt-8 py-10 bg-surface-dark rounded-xl shadow-md text-textSecondary flex flex-col items-center">
+          <Info size={32} className="mb-3 text-primary/50" />
           Gösterilecek NFT bulunamadı.
         </div>
       ) : (
         <>
           {/* Kategori filtreleri */}
           {!loading && categories.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-6 bg-surface-dark p-3 rounded-lg shadow-sm overflow-x-auto">
               <button
                 onClick={() => {
                   setActiveCategory(null);
                   triggerHapticFeedback('selection');
                 }}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
                   !activeCategory 
-                    ? 'bg-primary text-white' 
+                    ? 'bg-primary text-white shadow-md' 
                     : 'bg-muted hover:bg-muted/80 text-textSecondary'
                 }`}
               >
@@ -248,12 +281,8 @@ const Galeri: React.FC = () => {
                   return (
                     <button
                       key={category.value}
-                      className="px-3 py-1.5 rounded-full text-sm font-medium bg-muted/50 text-textMuted flex items-center cursor-not-allowed"
-                      title="Bu koleksiyonu görmek için seviye 5 olmalısınız"
-                      onClick={() => {
-                        triggerHapticFeedback('error');
-                        showNotification('warning', 'Bu koleksiyonu görmek için seviye 5 olmalısınız');
-                      }}
+                      className="px-3 py-1.5 rounded-full text-sm font-medium bg-muted/50 text-textSecondary cursor-not-allowed flex items-center whitespace-nowrap"
+                      disabled
                     >
                       <Lock size={14} className="mr-1.5" />
                       {category.displayName}
@@ -268,9 +297,9 @@ const Galeri: React.FC = () => {
                       setActiveCategory(category.value);
                       triggerHapticFeedback('selection');
                     }}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
                       activeCategory === category.value
-                        ? 'bg-primary text-white'
+                        ? 'bg-primary text-white shadow-md'
                         : 'bg-muted hover:bg-muted/80 text-textSecondary'
                     }`}
                   >
@@ -281,46 +310,27 @@ const Galeri: React.FC = () => {
             </div>
           )}
 
-          {/* Sora Koleksiyonu kilidi */}
-          {activeCategory === NFTCategory.SORA_VIDEO && !canAccessSoraCollection && (
-            <div className="bg-muted/40 border border-border rounded-lg p-6 text-center my-8">
-              <Crown size={40} className="mx-auto mb-4 text-textSecondary" />
-              <h3 className="text-lg font-semibold mb-1">Sora Koleksiyonu Kilitli</h3>
-              <p className="text-textSecondary mb-4">
-                Bu özel koleksiyonu görmek için seviye 5'e ulaşmanız gerekiyor. Şu anki seviyeniz: {userProfile?.level || 0}
-              </p>
-              <div className="text-xs inline-block bg-background px-3 py-1.5 rounded text-textSecondary">
-                Görevleri tamamlayarak seviye atlayabilirsiniz
-              </div>
-            </div>
-          )}
-
           {/* NFT'leri göster */}
-          {!loading && filteredNfts.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {filteredNfts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredNfts.map((nft) => (
-                <NFTKarti
+                <NFTKarti 
                   key={nft.id}
                   nft={nft}
                   isOwned={isNftOwned(nft.id)}
-                  isMinting={mintingId === nft.id}
                   onMint={() => handleMint(nft.id)}
+                  isMinting={mintingId === nft.id}
                   userStars={userStars}
                 />
               ))}
             </div>
-          )}
-          
-          {/* Hiç NFT yoksa */}
-          {!loading && !error && filteredNfts.length === 0 && !activeCategory && (
-            <p className="text-center text-textSecondary mt-8">Henüz NFT bulunamadı.</p>
-          )}
-          
-          {/* Seçili kategoride NFT yoksa */}
-          {!loading && !error && filteredNfts.length === 0 && activeCategory && (
-            <p className="text-center text-textSecondary mt-8">
-              Bu kategoride NFT bulunamadı.
-            </p>
+          ) : (
+            <div className="text-center mt-8 py-10 bg-surface-dark rounded-xl shadow-sm text-textSecondary flex flex-col items-center">
+              <Info size={28} className="mb-2 text-primary/60" />
+              {activeCategory === NFTCategory.SORA_VIDEO 
+                ? `Sora Koleksiyonuna erişim için seviye ${MIN_LEVEL_FOR_SORA_COLLECTION} olmalısınız.`
+                : 'Bu kategoride NFT bulunamadı.'}
+            </div>
           )}
         </>
       )}

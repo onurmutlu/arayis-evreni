@@ -1,0 +1,15 @@
+{
+  "id": 5,
+  "name": "Koruyucu",
+  "category": "general",
+  "level": 1,
+  "video": "/assets/nft/NFT-guardian.mp4",
+  "image": "/assets/nft/NFT-guardian.mp4",
+  "description": "Diğer kullanıcıları koruma yeteneği kazandırır.",
+  "price": 10000,
+  "rarity": "rare",
+  "benefits": [
+    "Diğer kullanıcıları koruyabilir",
+    "Özel alan görevlerine erişim"
+  ]
+}

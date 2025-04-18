@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import SayfaBasligi from '../components/SayfaBasligi';
 import NFTKarti from '../components/NFTKarti';
-import { Wallet as WalletIcon, AlertCircle, Loader2, Star, RefreshCw } from 'lucide-react';
+import { Wallet as WalletIcon, AlertCircle, Loader2, Star, RefreshCw, CreditCard, ShoppingBag, Shield } from 'lucide-react';
 import Buton from '../components/Buton';
 import { useTelegram } from '../contexts/TelegramContext';
 import { fetchUserWallet, fetchOwnedNfts } from '../utils/api';
 import { Nft } from '../types';
+import { Link } from 'react-router-dom';
 
 const Wallet: React.FC = () => {
   const { getTelegramUserId } = useTelegram();
@@ -93,26 +94,41 @@ const Wallet: React.FC = () => {
       {/* Cüzdan bilgileri */}
       {!loading && !error && walletData && (
         <div className="mb-8">
-          <div className="bg-surface rounded-lg shadow-md p-6 mb-4">
+          <div className="bg-card-gradient rounded-lg shadow-md p-6 mb-4 card-glow">
             <h2 className="text-xl font-bold mb-6 flex items-center">
               <Star size={20} className="mr-2 text-amber-400" />
               Stars Bakiyesi
             </h2>
             
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-              <div className="bg-muted/30 rounded-lg p-4 flex-1">
-                <p className="text-textSecondary text-sm mb-1">Mevcut Stars</p>
-                <p className="text-2xl font-bold text-amber-400">{walletData.stars}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-primary-gradient rounded-lg p-4 flex items-center">
+                <div className="bg-white/10 p-3 rounded-full mr-3">
+                  <CreditCard size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Mevcut Stars</p>
+                  <p className="text-2xl font-bold text-white">{walletData.stars}</p>
+                </div>
               </div>
               
-              <div className="bg-muted/30 rounded-lg p-4 flex-1">
-                <p className="text-textSecondary text-sm mb-1">Toplam Harcanan</p>
-                <p className="text-2xl font-bold">{walletData.stars_spent}</p>
+              <div className="bg-secondary-gradient rounded-lg p-4 flex items-center">
+                <div className="bg-white/10 p-3 rounded-full mr-3">
+                  <ShoppingBag size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Toplam Harcanan</p>
+                  <p className="text-2xl font-bold text-white">{walletData.stars_spent || 0}</p>
+                </div>
               </div>
               
-              <div className="bg-muted/30 rounded-lg p-4 flex-1">
-                <p className="text-textSecondary text-sm mb-1">Kullanıcı ID</p>
-                <p className="text-lg font-medium truncate">{walletData.uid}</p>
+              <div className="bg-surface/80 rounded-lg p-4 flex items-center border border-primary/10">
+                <div className="bg-primary/10 p-3 rounded-full mr-3">
+                  <Shield size={20} className="text-primary" />
+                </div>
+                <div>
+                  <p className="text-textSecondary text-sm mb-1">Kullanıcı ID</p>
+                  <p className="text-lg font-medium truncate">{walletData.uid}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -120,7 +136,7 @@ const Wallet: React.FC = () => {
       )}
 
       {/* NFT'ler */}
-      <div className="mb-6">
+      <div className="bg-card-gradient rounded-lg shadow-md p-6 mb-6 card-glow">
         <h2 className="text-lg font-semibold mb-4">Sahip Olduğun NFT'ler</h2>
         
         {nftsLoading && (
@@ -131,9 +147,14 @@ const Wallet: React.FC = () => {
         )}
         
         {!nftsLoading && ownedNfts.length === 0 && (
-          <div className="text-center py-8 text-textSecondary bg-surface rounded-lg">
+          <div className="text-center py-8 text-textSecondary bg-surface/30 rounded-lg border border-primary/10">
             <p>Henüz hiç NFT'ye sahip değilsin.</p>
             <p className="text-sm mt-2">Galeri'ye giderek NFT'leri keşfedebilirsin!</p>
+            <Link to="/galeri">
+              <Buton variant="secondary" className="mt-4">
+                Galeriye Git
+              </Buton>
+            </Link>
           </div>
         )}
         

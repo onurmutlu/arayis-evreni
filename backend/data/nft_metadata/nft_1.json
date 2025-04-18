@@ -1,0 +1,15 @@
+{
+  "id": 1,
+  "name": "Gözcü",
+  "category": "general",
+  "level": 1,
+  "video": "/assets/nft/NFT-watcher.mp4",
+  "image": "/assets/nft/NFT-watcher.mp4",
+  "description": "Görevleri görebilir ve takip edebilirsin.",
+  "price": 1000,
+  "rarity": "common",
+  "benefits": [
+    "Görevleri görebilir ve izleyebilir",
+    "Günlük %5 daha fazla yıldız"
+  ]
+}

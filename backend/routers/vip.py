@@ -68,3 +68,127 @@ async def unlock_vip_access_endpoint(
         # Eğer use_stars commit yaptıysa ama grant_vip yapamadıysa sorun olabilir.
         # db.rollback() gerekebilir. crud fonksiyonları içinde transaction yönetimi daha iyi olabilir.
         raise HTTPException(status_code=500, detail="VIP kilidi açılırken bir hata oluştu.") 
+
+@router.get("/vip-status", response_model=dict)
+async def get_vip_status(
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Kullanıcının VIP durumunu getirir.
+    """
+    vip_price = 500  # VIP erişim fiyatı
+    return {
+        "has_vip_access": current_user.has_vip_access,
+        "stars": current_user.stars,
+        "vip_price": vip_price,
+        "can_afford": current_user.stars >= vip_price
+    }
+
+@router.post("/unlock-vip", response_model=schemas.UnlockVipResponse)
+async def unlock_vip_access(
+    request: schemas.UnlockVipRequest,
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Stars kullanarak VIP erişimi açar.
+    """
+    # Kullanıcı zaten VIP mi?
+    if current_user.has_vip_access:
+        raise HTTPException(status_code=400, detail="Zaten VIP erişiminiz var.")
+    
+    # Stars özelliği aktif mi?
+    if not current_user.stars_enabled:
+        raise HTTPException(status_code=400, detail="Stars özelliği hesabınızda aktif değil.")
+    
+    # Sabit VIP fiyatı
+    vip_price = 500
+    
+    # Yeterli Stars var mı?
+    if current_user.stars < vip_price:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Yeterli Stars'ınız yok. Gereken: {vip_price}, Mevcut: {current_user.stars}"
+        )
+    
+    try:
+        # Stars'ları düş
+        current_user.stars -= vip_price
+        
+        # VIP erişimi aç
+        current_user.has_vip_access = True
+        
+        # İşlem kaydı oluştur
+        crud.create_star_transaction(
+            db=db,
+            user_id=current_user.id,
+            amount=-vip_price,
+            transaction_type=models.TransactionType.DEBIT,
+            reason="vip_unlock",
+            description=f"VIP erişimi için {vip_price} Stars harcandı"
+        )
+        
+        db.commit()
+        
+        # VIP olduğunda özel NFT verme
+        try:
+            vip_nft = crud.get_vip_nft(db=db)
+            if vip_nft:
+                crud.add_nft_to_user(db=db, user_id=current_user.id, nft_id=vip_nft.id, price=0)
+                db.commit()
+        except Exception as e:
+            print(f"VIP NFT verme hatası: {e}")
+            # Ana işlemi etkilememesi için bu hatayı yutuyoruz
+        
+        return schemas.UnlockVipResponse(
+            message="VIP erişim başarıyla açıldı!",
+            remaining_stars=current_user.stars,
+            vip_access_granted=True
+        )
+    except Exception as e:
+        db.rollback()
+        print(f"Error unlocking VIP for user {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail="VIP erişimi açılırken bir hata oluştu.")
+
+@router.get("/vip-benefits", response_model=List[dict])
+async def get_vip_benefits(
+    current_user: models.User = Depends(auth.get_current_active_user)
+):
+    """
+    VIP avantajlarını listeler.
+    """
+    benefits = [
+        {
+            "id": 1,
+            "title": "Özel Görevler",
+            "description": "Sadece VIP kullanıcılara özel görevlere erişim",
+            "icon": "crown"
+        },
+        {
+            "id": 2,
+            "title": "Premium NFT'ler",
+            "description": "Özel NFT koleksiyonlarına erişim",
+            "icon": "gem"
+        },
+        {
+            "id": 3,
+            "title": "Artırılmış Ödüller",
+            "description": "Tüm görevlerden %20 daha fazla XP ve Stars",
+            "icon": "trending-up"
+        },
+        {
+            "id": 4,
+            "title": "DAO Premium Oy",
+            "description": "Topluluk oylamalarında 5x oy gücü",
+            "icon": "vote"
+        },
+        {
+            "id": 5,
+            "title": "Öncelikli Destek",
+            "description": "Sorularınız için öncelikli destek hattı",
+            "icon": "headset"
+        }
+    ]
+    
+    return benefits 

@@ -1,0 +1,15 @@
+{
+  "id": 2,
+  "name": "Savaşçı",
+  "category": "general",
+  "level": 1,
+  "video": "/assets/nft/NFT-warrior.mp4",
+  "image": "/assets/nft/NFT-warrior.mp4",
+  "description": "Zorlu görevlerin üstesinden gelebilirsin.",
+  "price": 2500,
+  "rarity": "common",
+  "benefits": [
+    "Zorlu görevlerin kilidini açar",
+    "Günlük %10 daha fazla yıldız"
+  ]
+}
