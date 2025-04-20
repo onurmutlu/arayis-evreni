@@ -110,6 +110,15 @@ class NFTCategory(str, enum.Enum):
     VOTE_BASIC = "vote-basic"
     VOTE_PREMIUM = "vote-premium"
     VOTE_SORA = "vote-sora" # DAO oylama NFT'leri
+    # Yeni NFT kategorileri
+    WATCHER = "Watcher"
+    WARRIOR = "Warrior"
+    ORACLE = "Oracle"
+    GUARDIAN = "Guardian"
+    FLIRT = "Flirt"
+    HACKER = "Hacker" 
+    CITY = "City"
+    DAO = "DAO"
 
 class NFT(Base):
     __tablename__ = "nfts"

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from models import NFT, UserNFT
-from schemas import NFTCreate, NFTUpdate
+from schemas import NFTCreate
 
 def get_all_nfts(db: Session):
     return db.query(NFT).filter(NFT.is_active == True).all()
@@ -19,11 +19,10 @@ def create_nft(db: Session, nft: NFTCreate):
     db.refresh(db_nft)
     return db_nft
 
-def update_nft(db: Session, nft_id: int, nft: NFTUpdate):
+def update_nft(db: Session, nft_id: int, nft_data: dict):
     db_nft = get_nft(db, nft_id)
     if db_nft:
-        update_data = nft.dict(exclude_unset=True)
-        for key, value in update_data.items():
+        for key, value in nft_data.items():
             setattr(db_nft, key, value)
         db.commit()
         db.refresh(db_nft)

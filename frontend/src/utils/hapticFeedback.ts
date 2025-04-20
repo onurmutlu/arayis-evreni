@@ -8,108 +8,104 @@ declare global {
   }
 }
 
-// Haptic feedback türleri
-export type HapticFeedbackType = 'impact' | 'notification' | 'selection' | 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
-
-// Notification türleri
-export type NotificationType = 'success' | 'warning' | 'error' | string;
+/**
+ * Haptic feedback türleri
+ */
+export type HapticIntensity = 'light' | 'medium' | 'heavy';
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 /**
- * Telegram WebApp üzerinden haptic feedback tetikler
- * Telegram WebApp mevcut değilse sessizce başarısız olur
+ * Haptic geri bildirim sağlar (dokunmatik geri bildirim)
+ * @param intensity 'light' | 'medium' | 'heavy' şiddet seviyesi
  */
-export const triggerHapticFeedback = (style: HapticFeedbackType): void => {
+export function triggerHapticFeedback(intensity: HapticIntensity | NotificationType = 'medium'): void {
   try {
-    const telegram = window.Telegram;
-    if (!telegram || !telegram.WebApp || !telegram.WebApp.HapticFeedback) {
-      return; // Sessizce çık
-    }
-
-    switch (style) {
-      case 'impact':
-      case 'light':
-      case 'medium':
-      case 'heavy':
-        telegram.WebApp.HapticFeedback.impactOccurred(style);
-        break;
-      case 'selection':
-        telegram.WebApp.HapticFeedback.selectionChanged();
-        break;
-      case 'notification':
-      case 'success':
-        telegram.WebApp.HapticFeedback.notificationOccurred('success');
-        break;
-      case 'warning':
-        telegram.WebApp.HapticFeedback.notificationOccurred('warning');
-        break;
-      case 'error':
-        telegram.WebApp.HapticFeedback.notificationOccurred('error');
-        break;
-      default:
-        telegram.WebApp.HapticFeedback.impactOccurred('medium');
-    }
-  } catch (error) {
-    // Hata durumunda sessizce devam et
-    console.error('Haptic feedback hatası:', error);
-  }
-};
-
-/**
- * Telegram WebApp üzerinde bildirim gösterir
- * Telegram WebApp mevcut değilse alternatif olarak console.log kullanır
- */
-export const showNotification = (type: NotificationType, message?: string): void => {
-  try {
-    const telegram = window.Telegram;
-    if (!telegram || !telegram.WebApp) {
-      // Alternatif bildirim yöntemi
-      console.log(`[${type.toUpperCase()}] ${message || getDefaultMessage(type)}`);
+    // iOS için
+    if (window.Telegram?.WebApp?.hapticFeedback) {
+      if (intensity === 'light' || intensity === 'info') {
+        window.Telegram.WebApp.hapticFeedback.notificationOccurred('success');
+      } else if (intensity === 'medium' || intensity === 'success') {
+        window.Telegram.WebApp.hapticFeedback.notificationOccurred('warning');
+      } else if (intensity === 'heavy' || intensity === 'error') {
+        window.Telegram.WebApp.hapticFeedback.notificationOccurred('error');
+      }
       return;
     }
-
-    const finalMessage = message || getDefaultMessage(type);
     
-    // Telegram WebApp API'si destekliyorsa popup göster
-    if (telegram.WebApp.showPopup) {
-      telegram.WebApp.showPopup({
-        title: getNotificationTitle(type),
-        message: finalMessage,
-        buttons: [{ type: 'close' }]
-      });
-    } 
-    // Alternatif olarak alert göster
-    else if (telegram.WebApp.showAlert) {
-      telegram.WebApp.showAlert(finalMessage);
-    }
-    // WebApp API'si yoksa console.log kullan
-    else {
-      console.log(`[${type.toUpperCase()}] ${finalMessage}`);
+    // Web standart Vibration API
+    if ('vibrate' in navigator) {
+      switch (intensity) {
+        case 'light':
+        case 'info':
+          navigator.vibrate(10);
+          break;
+        case 'medium':
+        case 'success':
+          navigator.vibrate([10, 30, 10]);
+          break;
+        case 'heavy':
+        case 'error':
+          navigator.vibrate([10, 100, 10, 100, 10]);
+          break;
+        default:
+          navigator.vibrate(20);
+      }
     }
   } catch (error) {
-    console.error('Bildirim gösterme hatası:', error);
+    console.warn('Haptic feedback is not supported on this device.');
   }
-};
-
-/**
- * Bildirim türüne göre varsayılan mesaj
- */
-function getDefaultMessage(type: NotificationType): string {
-  const messages: Record<string, string> = {
-    success: 'İşlem başarıyla tamamlandı!',
-    warning: 'Dikkat! Bu işlem bazı sorunlar içerebilir.',
-    error: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
-  };
-  return messages[type] || messages.success;
 }
 
 /**
- * Bildirim türüne göre başlık
+ * Bildirim gösterme fonksiyonu
+ * @param type Bildirim tipi
+ * @param message Mesaj (opsiyonel)
  */
-function getNotificationTitle(type: NotificationType): string {
-  const titles: Record<string, string> = {
-    success: '✅ Başarılı',
-    warning: '⚠️ Uyarı',
-    error: '❌ Hata',
-  };
-  return titles[type] || 'Bildirim';
+export function showNotification(type: NotificationType, message?: string): void {
+  try {
+    if (window.Telegram?.WebApp?.showPopup) {
+      let title = '';
+      switch (type) {
+        case 'success':
+          title = '✓ Başarılı';
+          break;
+        case 'error':
+          title = '✗ Hata';
+          break;
+        case 'info':
+          title = 'ℹ️ Bilgi';
+          break;
+        case 'warning':
+          title = '⚠️ Uyarı';
+          break;
+      }
+      
+      window.Telegram.WebApp.showPopup({
+        title,
+        message: message || '',
+      });
+      
+      return;
+    }
+    
+    // Tarayıcıda basit bir bildirim efekti
+    console.log(`[${type.toUpperCase()}] ${message || ''}`);
+  } catch (error) {
+    console.warn('Notification is not supported on this device.');
+  }
+}
+
+// Başarı dokunma geri bildirimi
+export function successHaptic(): void {
+  triggerHapticFeedback('medium');
+}
+
+// Hata dokunma geri bildirimi
+export function errorHaptic(): void {
+  triggerHapticFeedback('heavy');
+}
+
+// Bildirim dokunma geri bildirimi
+export function notificationHaptic(): void {
+  triggerHapticFeedback('light');
 }

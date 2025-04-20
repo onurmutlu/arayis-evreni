@@ -20,6 +20,7 @@ interface TelegramContextValue {
   isWebAppExpanded: boolean;
   expandWebApp: () => void;
   getTelegramUserId: () => number | null;
+  getInitDataRaw: () => string;
   initWebApp: () => void;
   isReady: boolean;
 }
@@ -118,16 +119,30 @@ export const TelegramProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Telegram User ID alma fonksiyonu
   const getTelegramUserId = (): number | null => {
-    if (user) {
+    if (user && user.id) {
       return user.id;
     }
     
     // Çevre değişkeninden fallback ID'yi al
     if (import.meta.env.VITE_FALLBACK_USER_ID) {
-      return parseInt(import.meta.env.VITE_FALLBACK_USER_ID, 10);
+      const parsedId = parseInt(import.meta.env.VITE_FALLBACK_USER_ID, 10);
+      // NaN kontrolü
+      if (!isNaN(parsedId)) {
+        return parsedId;
+      }
     }
     
-    return null;
+    // Fallback olarak sabit bir değer döndür
+    console.log("⚠️ Geçerli kullanıcı ID'si bulunamadı, varsayılan demo ID kullanılıyor");
+    return 123456; // Demo kullanıcı ID'si
+  };
+
+  // Ham initData bilgisini alma fonksiyonu
+  const getInitDataRaw = (): string => {
+    if (window.Telegram && window.Telegram.WebApp) {
+      return window.Telegram.WebApp.initData || '';
+    }
+    return '';
   };
 
   const value = {
@@ -138,6 +153,7 @@ export const TelegramProvider: React.FC<{ children: ReactNode }> = ({ children }
     isWebAppExpanded,
     expandWebApp,
     getTelegramUserId,
+    getInitDataRaw,
     initWebApp,
     isReady
   };

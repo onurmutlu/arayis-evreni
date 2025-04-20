@@ -187,6 +187,25 @@ backend/
 └── requirements.txt     # Python bağımlılıkları
 ```
 
+### Blockchain (TON Network)
+
+```
+blockchain/
+├── contracts/            # Akıllı kontratlar
+│   ├── jetton/           # AJX token kontratları
+│   │   ├── minter.fc     # Jetton Minter
+│   │   └── wallet.fc     # Jetton Wallet
+│   ├── nft/              # NFT kontratları
+│   │   ├── collection.fc # NFT Koleksiyon
+│   │   └── item.fc       # NFT Item
+│   └── dao/              # DAO yönetişim kontratları
+├── scripts/              # Deployment ve etkileşim scriptleri
+│   ├── deploy_jetton.py  # AJX token deployment
+│   ├── deploy_nft.py     # NFT koleksiyon deployment
+│   └── deploy_dao.py     # DAO kontrat deployment
+└── tests/                # Kontrat test dosyaları
+```
+
 ## 🧩 Entegrasyonlar
 
 ### 🚀 Telegram Mini App
@@ -199,9 +218,30 @@ Uygulama, Telegram Mini App platformu üzerinde çalışır ve Telegram'ın WebA
 ### ⛓️ TON Blockchain
 Uygulama, TON (The Open Network) blockchain'i ile entegre çalışır:
 
-- NFT Mint İşlemleri: TON üzerinde NFT oluşturma
-- Cüzdan Entegrasyonu: TON varlıklarını yönetme
-- Akıllı Kontratlar: NFT marketplace ve değer transferi
+- **NFT Mint İşlemleri**: TON üzerinde NFT oluşturma ve koleksiyon yönetimi
+- **Cüzdan Entegrasyonu**: TON Transfer, NFT ve Jetton varlıklarını yönetme
+- **Akıllı Kontratlar**: NFT marketplace, Jetton ve değer transferi
+- **AJAN X (AJX) Jetton**: Topluluk token'ı ve ekonomi sistemi
+  - Toplam Arz: 10,000,000 AJX
+  - Kullanım Alanları: DAO yönetişimi, özel içerik erişimi, ödül dağıtımı
+  - Dağıtım: Görev tamamlama, topluluk katkıları ve ekosistem teşvikleri
+
+#### TON Blockchain Araçları
+- TON Connect 2.0: Kullanıcı cüzdanlarını uygulamaya bağlama
+- TON NFT ve Jetton Standartları: TEP-62, TEP-64 ve TEP-74 uyumlu dijital varlıklar
+- TON API: Blockchain verilerine erişim ve işlem doğrulama
+
+### 🪙 AJAN X Token (AJX)
+AJAN X (AJX), Arayış Evreni ekosisteminin yerel token'ıdır ve TON blockchain üzerinde Jetton standardında oluşturulmuştur:
+
+- Toplam arz: 10,000,000 AJX
+- Kullanım Durumları:
+  - DAO oylamalarında katılım ve oylama gücü
+  - Premium içerik ve özel NFT'lere erişim
+  - Ekosistem içi ticaret ve değer transferi
+  - Topluluk teşvikleri ve ödül dağıtımı
+
+Jetton kontratı ve teknik detaylar için [ton-deploy.md](./ton-deploy.md) dokümanını inceleyebilirsiniz.
 
 ## 🔮 Gelecek Planları
 

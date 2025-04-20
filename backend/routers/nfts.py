@@ -3,6 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 import random
+import logging
+from pydantic import BaseModel
+from enum import Enum
+
+# Logger tanımlama
+logger = logging.getLogger(__name__)
 
 # crud, models, schemas importları eklenecek
 import schemas
@@ -11,9 +17,156 @@ import crud, models, auth
 
 router = APIRouter()
 
+# NFT rarity enum türünü tanımlama
+class NFTRarity(str, Enum):
+    common = "common"
+    uncommon = "uncommon"
+    rare = "rare"
+    epic = "epic"
+    legendary = "legendary"
+
+# NFT metadata modeli
+class NFTMetadata(BaseModel):
+    id: int
+    category: str
+    level: int
+    name: str
+    video: str
+    rarity: NFTRarity
+
+# Örnek NFT metadata verileri
+nft_metadata = [
+    {
+        "id": 1,
+        "category": "Watcher",
+        "level": 1,
+        "name": "Watcher Seviye 1",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-watcher-1.mp4",
+        "rarity": "common"
+    },
+    {
+        "id": 2,
+        "category": "Watcher",
+        "level": 2,
+        "name": "Watcher Seviye 2",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-watcher-2.mp4",
+        "rarity": "uncommon"
+    },
+    {
+        "id": 3,
+        "category": "Warrior",
+        "level": 1,
+        "name": "Warrior Seviye 1",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-warrior-1.mp4",
+        "rarity": "common"
+    },
+    {
+        "id": 4,
+        "category": "Warrior",
+        "level": 2,
+        "name": "Warrior Seviye 2",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-warrior-2.mp4",
+        "rarity": "uncommon"
+    },
+    {
+        "id": 5,
+        "category": "Oracle",
+        "level": 1,
+        "name": "Oracle Seviye 1",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-oracle-1.mp4",
+        "rarity": "rare"
+    },
+    {
+        "id": 6,
+        "category": "Guardian",
+        "level": 1,
+        "name": "Guardian Seviye 1",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-guardian-1.mp4",
+        "rarity": "epic"
+    },
+    {
+        "id": 7,
+        "category": "Flirt",
+        "level": 1,
+        "name": "Flirt Seviye 1", 
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-flirt-1.mp4",
+        "rarity": "rare"
+    },
+    {
+        "id": 8,
+        "category": "Hacker",
+        "level": 1,
+        "name": "Hacker Seviye 1",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-hacker-1.mp4",
+        "rarity": "uncommon"
+    },
+    {
+        "id": 9,
+        "category": "City",
+        "level": 1,
+        "name": "City Seviye 1",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-city-1.mp4",
+        "rarity": "legendary"
+    },
+    {
+        "id": 10,
+        "category": "DAO",
+        "level": 1,
+        "name": "DAO Seviye 1",
+        "video": "https://arayis-evreni.siyahkare.com/assets/nft/NFT-DAO-1.mp4",
+        "rarity": "epic"
+    }
+]
+
 # TODO: /nft/buy endpoint'i
 # TODO: /gallery/{uid} endpoint'i (Kullanıcının NFT'lerini listele)
 # TODO: Satıştaki NFT'leri listeleme endpoint'i
+
+# --- Metadata API Endpoints (eski /nft endpoint'leri) ---
+
+# Tüm NFT metadatalarını listeleyen endpoint (eski nft.py'den gelen)
+@router.get("/list", response_model=List[NFTMetadata], tags=["NFT Metadata"])
+async def list_nfts():
+    """
+    Tüm NFT'lerin metadata'larını listeler.
+    """
+    return nft_metadata
+
+# ID'ye göre NFT metadata getiren endpoint (eski nft.py'den gelen)
+@router.get("/{id}", response_model=NFTMetadata, tags=["NFT Metadata"])
+async def get_nft_metadata_by_id(id: int):
+    """
+    Belirli bir NFT'nin metadata'sını ID parametresiyle döndürür.
+    """
+    for nft in nft_metadata:
+        if nft["id"] == id:
+            return nft
+    
+    # NFT bulunamadığında 404 hatası dön
+    raise HTTPException(status_code=404, detail="NFT not found")
+
+# Tüm NFT metadatalarını listeleyen endpoint (eski nfts.py'deki aynı endpoint)
+@router.get("/metadata/list", response_model=List[NFTMetadata], tags=["NFT Metadata"])
+async def list_nft_metadata():
+    """
+    Tüm NFT'lerin metadata'larını listeler.
+    """
+    return nft_metadata
+
+# ID'ye göre NFT metadata getiren endpoint (eski nfts.py'deki aynı endpoint)
+@router.get("/metadata/{id}", response_model=NFTMetadata, tags=["NFT Metadata"])
+async def get_nft_metadata(id: int):
+    """
+    Belirli bir NFT'nin metadata'sını ID parametresiyle döndürür.
+    """
+    for nft in nft_metadata:
+        if nft["id"] == id:
+            return nft
+    
+    # NFT bulunamadığında 404 hatası dön
+    raise HTTPException(status_code=404, detail="NFT not found")
+
+# --- Veritabanı NFT Endpoints (eski /nfts endpoint'leri) ---
 
 @router.get("/all", response_model=List[schemas.NFT])
 async def read_all_nfts(
@@ -29,7 +182,7 @@ async def read_all_nfts(
     nfts = crud.get_all_nfts(db=db, category=category, skip=skip, limit=limit)
     return nfts
 
-@router.get("/{nft_id}", response_model=schemas.NFT)
+@router.get("/details/{nft_id}", response_model=schemas.NFT)
 async def read_nft_details(
     nft_id: int,
     current_user: models.User = Depends(auth.get_current_active_user),
@@ -55,7 +208,7 @@ async def read_user_nfts(
     user_nfts = crud.get_user_nfts(db=db, user_id=current_user.id)
     return user_nfts
 
-@router.post("/nft/buy", response_model=schemas.BuyNFTResponse)
+@router.post("/buy", response_model=schemas.BuyNFTResponse)
 async def buy_nft(
     request: schemas.BuyNFTRequest,
     current_user: models.User = Depends(auth.get_current_active_user),
@@ -94,7 +247,7 @@ async def buy_nft(
         print(f"Error buying NFT {request.nft_id} for user {current_user.id}: {e}")
         raise HTTPException(status_code=500, detail="NFT satın alınırken bir hata oluştu.")
 
-@router.post("/nft/mint", response_model=schemas.BuyNFTResponse)
+@router.post("/mint", response_model=schemas.BuyNFTResponse)
 async def mint_nft(
     request: schemas.BuyNFTRequest,
     current_user: models.User = Depends(auth.get_current_active_user),
@@ -116,68 +269,19 @@ async def mint_nft(
     if not user_nft:
         raise HTTPException(status_code=400, detail="Bu NFT'ye sahip değilsiniz, önce satın almalısınız.")
     
-    # NFT zaten mint edilmiş mi?
-    if user_nft.minted:
-        raise HTTPException(status_code=400, detail="Bu NFT zaten blockchain'e mint edilmiş.")
-    
+    # TODO: NFT mint etme işlemini entegre et
     try:
-        # Mint işlemi Burada TON Blockchain entegrasyonu yapılacak
-        # Şimdilik sadece veritabanında update yapıyoruz
-        user_nft.minted = True
-        user_nft.minted_at = datetime.now()
-        db.commit()
-        
+        # Blockchain'e mint etme işlemi burada yapılacak
+        # Şu an için simülasyon olarak başarılı kabul ediyoruz
         return schemas.BuyNFTResponse(
-            message=f"{nft.name} başarıyla blockchain'e mint edildi!",
+            message=f"{nft.name} başarıyla mint edildi!",
             remaining_stars=current_user.stars
         )
     except Exception as e:
         print(f"Error minting NFT {request.nft_id} for user {current_user.id}: {e}")
         raise HTTPException(status_code=500, detail="NFT mint edilirken bir hata oluştu.")
 
-@router.get("/placeholder", response_model=List[schemas.NFT])
-def read_nfts_placeholder(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    """
-    Frontend için geçici NFT verileri döndürür.
-    ÖNEMLİ: Bu endpoint sadece geliştirme aşamasında kullanılmalıdır.
-    """
-    
-    nfts = []
-    # Kategoriler
-    categories = [
-        models.NFTCategory.GENERAL,
-        models.NFTCategory.SORA_VIDEO,
-        models.NFTCategory.VOTE_BASIC,
-        models.NFTCategory.VOTE_PREMIUM,
-        models.NFTCategory.VOTE_SORA
-    ]
-    
-    nft_types = ['oracle', 'warrior', 'guardian', 'hacker', 'watcher', 'flirt', 'DAO', 'city']
-    
-    for i in range(1, 11):
-        category = random.choice(categories)
-        nft_type = random.choice(nft_types)
-        variant = random.randint(1, 4)
-        video_url = f"/assets/nft/NFT-{nft_type}-{variant}.mp4"
-        
-        nft = schemas.NFT(
-            id=i,
-            name=f"NFT #{i} ({nft_type.capitalize()})",
-            description=f"Bu {nft_type.capitalize()} NFT #{i} koleksiyonunun bir parçasıdır.",
-            image_url=video_url,
-            video_url=video_url,
-            category=category,
-            price_stars=random.randint(100, 1000),
-            total_supply=random.randint(100, 1000),
-            mintable=True,
-            is_active=True,
-            created_at=datetime.now()
-        )
-        nfts.append(nft)
-    
-    return nfts
-
-# Tüm NFT'leri getir
+# Ana NFT listesi endpoint'i
 @router.get("/", response_model=List[schemas.NFT])
 def read_nfts(
     db: Session = Depends(get_db),
@@ -185,82 +289,92 @@ def read_nfts(
     limit: int = 100
 ):
     """
-    Get all NFTs.
+    Tüm NFT'leri listeler.
     """
-    # nfts = crud.get_all_nfts(db, skip=skip, limit=limit)
-    # nfts = crud.get_all_nfts(db)
+    # models.NFTCategory enum'undan kategoriler alınıyor
+    categories = [
+        models.NFTCategory.WATCHER, 
+        models.NFTCategory.WARRIOR, 
+        models.NFTCategory.ORACLE, 
+        models.NFTCategory.GUARDIAN, 
+        models.NFTCategory.FLIRT, 
+        models.NFTCategory.HACKER,
+        models.NFTCategory.CITY,
+        models.NFTCategory.DAO
+    ]
     
     nfts = []
-    
-    # NFT kategorileri ve tipleri - tutarlılık için sabit listeler
-    categories = [
-        models.NFTCategory.GENERAL,
-        models.NFTCategory.SORA_VIDEO,
-        models.NFTCategory.VOTE_BASIC, 
-        models.NFTCategory.VOTE_PREMIUM,
-        models.NFTCategory.VOTE_SORA
-    ]
-
-    nft_types = ['oracle', 'warrior', 'guardian', 'hacker', 'watcher', 'flirt', 'DAO', 'city']
-
-    # NFT isimleri ve açıklamaları
-    nft_names = {
-        'oracle': "Kehanet Ustası",
-        'warrior': "Dijital Savaşçı", 
-        'guardian': "Ağ Koruyucusu",
-        'hacker': "Etik Hacker",
-        'watcher': "Gözlemci",
-        'flirt': "Sosyal Manipülatör",
-        'DAO': "DAO Kurucusu",
-        'city': "Dijital Şehir"
-    }
-
-    nft_descriptions = {
-        'oracle': "Veri akışlarını analiz ederek geleceği tahmin edebilen bir ajan tipi.",
-        'warrior': "Dijital arenada mücadele eden, siber saldırılara karşı direnen savaşçı.",
-        'guardian': "Sistemleri ve ağları korumak için tasarlanmış koruyucu ajan.",
-        'hacker': "Sistemlere sızma ve bilgi toplama konusunda uzmanlaşmış ajan.",
-        'watcher': "Dijital ortamları sürekli gözlemleyen ve izleyen ajan.",
-        'flirt': "Sosyal mühendislik taktikleriyle bilgi toplayan çekici ajan.",
-        'DAO': "Dağıtık otonom organizasyonları kuran ve yöneten ajan.",
-        'city': "Dijital şehirlerde faaliyet gösteren urban ajan."
-    }
-
-    for i in range(1, 11):
-        # id'ye göre tutarlı kategori ve tip seçimi
-        category_index = (i * 7) % len(categories)
-        type_index = (i * 3) % len(nft_types)
-        
+    for i in range(10):
+        category_index = i % len(categories)
+        level = (i % 3) + 1  # 1, 2, veya 3
         category = categories[category_index]
-        nft_type = nft_types[type_index]
         
-        # id'ye göre tutarlı varyasyon numarası
-        variant_num = (i % 4) + 1
-        
-        video_url = f"/assets/nft/NFT-{nft_type}-{variant_num}.mp4"
-        
-        # Seviyeye göre fiyat
-        price = 200 + (i * 50)
-        
-        # NFT adı
-        nft_name = f"{nft_names[nft_type]} #{variant_num}"
-        
-        # NFT açıklaması
-        nft_description = nft_descriptions[nft_type]
+        # Video URL'si
+        video_path = f"https://arayis-evreni.siyahkare.com/assets/nft/NFT-{category.lower()}-{level}.mp4"
+        # Aynı URL'yi resim için de kullan (uzantı olmadan)
+        image_path = f"https://arayis-evreni.siyahkare.com/assets/nft/NFT-{category.lower()}-{level}"
         
         nft = schemas.NFT(
-            id=i,
-            name=nft_name,
-            description=nft_description,
-            image_url=video_url,
-            video_url=video_url,
+            id=i+1,
+            name=f"{category} Level {level}",
+            description=f"A {category} NFT at level {level}",
+            video_url=video_path,
+            image_url=image_path,
             category=category,
-            price_stars=price,
-            total_supply=100 + (i * 30),
-            mintable=True,
+            price_stars=(i+1) * 100,
+            total_supply=50 - (i * 3),
+            mintable=i < 5,  # İlk 5 mint edilebilir
             is_active=True,
             created_at=datetime.now()
         )
         nfts.append(nft)
     
-    return nfts 
+    return nfts
+
+# Placeholder endpoint için de aynı düzeltmeyi yapalım
+@router.get("/placeholder", response_model=List[schemas.NFT])
+def read_nfts_placeholder(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """
+    Placeholder NFT'leri döndürür (geliştirme için).
+    """
+    # models.NFTCategory enum'undan kategoriler alınıyor
+    categories = [
+        models.NFTCategory.WATCHER, 
+        models.NFTCategory.WARRIOR, 
+        models.NFTCategory.ORACLE, 
+        models.NFTCategory.GUARDIAN, 
+        models.NFTCategory.FLIRT, 
+        models.NFTCategory.HACKER,
+        models.NFTCategory.CITY,
+        models.NFTCategory.DAO
+    ]
+    
+    nfts = []
+    for i in range(10):
+        category = random.choice(categories)
+        random_level = random.randint(1, 3)
+        
+        # Video URL'si
+        video_path = f"https://arayis-evreni.siyahkare.com/assets/nft/NFT-{category.lower()}-{random_level}.mp4"
+        # Aynı URL'yi resim için de kullan (uzantı olmadan)
+        image_path = f"https://arayis-evreni.siyahkare.com/assets/nft/NFT-{category.lower()}-{random_level}"
+        
+        nft = schemas.NFT(
+            id=i+1,
+            name=f"{category} Level {random_level}",
+            description=f"A {category} NFT at level {random_level}",
+            video_url=video_path,
+            image_url=image_path,
+            category=category,
+            price_stars=random.randint(50, 500) * 10,
+            total_supply=random.randint(10, 100),
+            mintable=bool(random.getrandbits(1)),
+            is_active=True,
+            created_at=datetime.now()
+        )
+        nfts.append(nft)
+    
+    return nfts
+
+# Logger mesajı
+logger.info("⚙️ NFT API endpoints ready") 

@@ -2,6 +2,27 @@
 
 Arayış Evreni projesinde yapılan tüm önemli değişiklikler bu dosyada belgelenmiştir. Format, [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/) standartlarını izler.
 
+## [1.2.0] - 2024-06-01 (Planlanan)
+
+### 🚀 TON Blockchain ve Token Entegrasyonu
+- AJAN X (AJX) Jetton lansmanı - 10 milyon toplam arz
+- TON Connect 2.0 cüzdan entegrasyonu iyileştirmeleri
+- AJX token için kullanıcı arayüzü
+- Jetton transfer ve yönetim arayüzü
+- NFT ve Jetton görüntüleme optimizasyonu
+
+### 🔧 DAO Sistemi Geliştirmeleri
+- AJX token bazlı oylama sistemi
+- DAO teklifleri için kontrat entegrasyonu
+- Topluluk hazinesi ve şeffaf yönetim
+- Stake etme ve oylama gücü kazanma mekanizması
+
+### 📱 Kullanıcı Deneyimi
+- Blockchain işlemleri için gelişmiş bildirimler
+- Token bakiyesi görüntüleme ve istatistikler
+- Transaction geçmişi ve explorer entegrasyonu
+- Blockchain etkileşimli görevler
+
 ## [1.1.0] - 2024-05-15 (Yakında)
 
 ### 🚀 Yeni Özellikler
@@ -46,6 +67,7 @@ Arayış Evreni projesinde yapılan tüm önemli değişiklikler bu dosyada belg
 - NFT'leri TON blockchain'e mint etme özelliği
 - Wallet Connect desteği
 - Blockchain işlemleri için imza ve onay akışları
+- AJX Jetton kontrat prototipinin geliştirilmesi
 
 ### ⭐ Premium İçerik
 - VIP görevler ve erişim sistemi
@@ -70,6 +92,7 @@ Arayış Evreni projesinde yapılan tüm önemli değişiklikler bu dosyada belg
 - Topluluk sayfaları ve bağlantıları
 - Forum entegrasyonu
 - Kullanıcı geri bildirim mekanizmaları
+- AJX token ekonomisi araştırmaları başlatıldı
 
 ### 📊 Analitik ve Raporlama
 - Büyüme analitikleri paneli
@@ -91,6 +114,7 @@ Arayış Evreni projesinde yapılan tüm önemli değişiklikler bu dosyada belg
 - Alembic migrasyon altyapısı
 - Veritabanı modelleri ve şemalar
 - API endpoint'leri ve dokümantasyonu
+- TON API entegrasyonu çalışmaları başlatıldı
 
 ### 🔐 Güvenlik ve Kimlik Doğrulama
 - Telegram kimlik doğrulama entegrasyonu
@@ -105,6 +129,7 @@ Arayış Evreni projesinde yapılan tüm önemli değişiklikler bu dosyada belg
 - UnoCSS ile stil sistemi
 - Responsive tasarım yapısı
 - Form yönetimi ve doğrulama
+- TON cüzdan entegrasyon araştırmaları başlatıldı
 
 ### 🌐 Entegrasyonlar
 - Telegram WebApp API temel entegrasyonu

@@ -14,11 +14,15 @@ def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 def get_user_by_telegram_id(db: Session, telegram_id: int):
-    """Kullanıcıyı Telegram ID'ye göre getir"""
+    """
+    Kullanıcıyı Telegram ID'sine göre bulur
+    """
     return db.query(models.User).filter(models.User.telegram_id == telegram_id).first()
 
 def get_user_by_username(db: Session, username: str):
-    """Kullanıcıyı kullanıcı adına göre getir"""
+    """
+    Kullanıcıyı kullanıcı adına göre bulur
+    """
     return db.query(models.User).filter(models.User.username == username).first()
 
 def create_user(db: Session, user_data: schemas.UserCreate):
@@ -464,4 +468,61 @@ def grant_vip_access(db: Session, user: models.User, grant: bool = True):
     """Kullanıcıya VIP erişimi verir/kaldırır"""
     user.has_vip_access = grant
     db.commit()
-    return user 
+    return user
+
+def get_user_badges(db: Session, user_id: int):
+    """
+    Kullanıcının rozetlerini getirir
+    """
+    user_badges = db.query(models.UserBadge).filter(models.UserBadge.user_id == user_id).all()
+    badges = []
+    
+    for ub in user_badges:
+        badge = db.query(models.Badge).filter(models.Badge.id == ub.badge_id).first()
+        if badge:
+            badges.append({
+                "badge_id": badge.id,
+                "badge_name": badge.name,
+                "badge_image_url": badge.image_url,
+                "earned_at": ub.earned_at.isoformat() if ub.earned_at else None
+            })
+    
+    return badges
+
+def get_user_missions(db: Session, user_id: int):
+    """
+    Kullanıcının tamamladığı görevleri getirir
+    """
+    user_missions = db.query(models.UserMission).filter(models.UserMission.user_id == user_id).all()
+    completed_missions = []
+    
+    for um in user_missions:
+        completed_missions.append({
+            "mission_id": um.mission_id,
+            "completed_at": um.completed_at.isoformat() if um.completed_at else None
+        })
+    
+    return completed_missions
+
+def get_user_mission_stories(db: Session, user_id: int):
+    """
+    Kullanıcının görev hikayelerini getirir
+    """
+    stories = db.query(models.MissionStory).filter(models.MissionStory.user_id == user_id).all()
+    mission_stories = []
+    
+    for story in stories:
+        mission_stories.append({
+            "id": story.id,
+            "mission_id": story.mission_id,
+            "story_text": story.story_text,
+            "timestamp": story.timestamp.isoformat() if story.timestamp else None
+        })
+    
+    return mission_stories
+
+def get_user_nft_count(db: Session, user_id: int):
+    """
+    Kullanıcının sahip olduğu NFT sayısını getirir
+    """
+    return db.query(models.UserNFT).filter(models.UserNFT.user_id == user_id).count() 

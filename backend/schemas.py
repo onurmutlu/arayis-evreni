@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from models import MissionType, NFTCategory, ProposalStatus, Badge as BadgeModel
+from enum import Enum
 
 # Base Schemas (Temel alanlar)
 class MissionBase(BaseModel):
@@ -20,7 +21,10 @@ class MissionBase(BaseModel):
 class BadgeBase(BaseModel):
     name: str
     description: str
-    image_url: str
+    image_url: str = Field(
+        description="Badge image URL path",
+        example="/badges/welcome-badge.png"  # Örnek URL'yi güncelliyoruz
+    )
     required_xp: Optional[int] = None
     required_mission_id: Optional[int] = None
     is_active: bool = True
@@ -353,4 +357,20 @@ class AdminCreateNFTRequest(NFTCreate):
     pass
 
 class AdminCreateProposalRequest(DAOProposalCreate):
-    pass 
+    pass
+
+class NFTCategory(str, Enum):
+    GENERAL = "general"
+    SORA_VIDEO = "sora_video"
+    VOTE_BASIC = "vote-basic"
+    VOTE_PREMIUM = "vote-premium"
+    VOTE_SORA = "vote-sora"
+    # Yeni NFT kategorileri
+    WATCHER = "Watcher"
+    WARRIOR = "Warrior"
+    ORACLE = "Oracle"
+    GUARDIAN = "Guardian"
+    FLIRT = "Flirt"
+    HACKER = "Hacker"
+    CITY = "City"
+    DAO = "DAO" 

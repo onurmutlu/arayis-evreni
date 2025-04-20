@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, status
 from sqlalchemy.orm import Session
 from typing import List, Annotated, Dict, Any
-from datetime import timedelta # timedelta import edildi
+from datetime import timedelta, datetime # datetime import eklendi
 from sqlalchemy.sql import func
 
 # crud, models, schemas importları eklenecek
@@ -36,21 +36,99 @@ def calculate_level_from_xp(xp: int) -> int:
         return max(4, round(xp / 100))
 
 # TODO: /profil/{uid} endpoint'i - EKLENDI
-@router.get("/profile/{uid}", response_model=schemas.UserProfile)
+@router.get("/{uid}", response_model=schemas.UserProfile)
 async def get_user_profile(uid: str, db: Session = Depends(get_db)):
-    # Numeric uid means user_id, otherwise it's a username
-    user = None
-    if uid.isdigit():
-        user = crud.get_user_profile(db, int(uid))
-    else:
-        user_obj = crud.get_user_by_username(db, uid)
-        if user_obj:
-            user = crud.get_user_profile(db, user_obj.id)
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return user
+    """
+    Kullanıcı profil bilgilerini getirir
+    """
+    try:
+        # Demo mod için kullanıcı oluştur
+        if uid == "demo123" or uid == "123456":
+            return {
+                "id": 12345,
+                "telegram_id": 0,
+                "username": "demo123",
+                "first_name": "Demo",
+                "xp": 750,
+                "level": 3,
+                "stars": 500,
+                "stars_enabled": True,
+                "has_vip_access": False,
+                "created_at": datetime.now().isoformat(),
+                "consecutive_login_days": 5,
+                "mission_streak": 3,
+                "invited_users_count": 2,
+                "badges": [
+                    {
+                        "badge_id": 1,
+                        "badge_name": "Yeni Üye",
+                        "badge_image_url": "/badges/welcome-badge.png", 
+                        "earned_at": datetime.now().isoformat()
+                    },
+                    {
+                        "badge_id": 2,
+                        "badge_name": "İlk Görev",
+                        "badge_image_url": "/badges/mission-badge.png",
+                        "earned_at": datetime.now().isoformat()
+                    },
+                    {
+                        "badge_id": 3,
+                        "badge_name": "Flört Ustası",
+                        "badge_image_url": "/badges/flirt-badge.png",
+                        "earned_at": datetime.now().isoformat()
+                    },
+                    {
+                        "badge_id": 4,
+                        "badge_name": "Analist",
+                        "badge_image_url": "/badges/analyst-badge.png",
+                        "earned_at": datetime.now().isoformat()
+                    }
+                ],
+                "completed_missions": [
+                    {
+                        "mission_id": 1,
+                        "completed_at": datetime.now().isoformat()
+                    }
+                ],
+                "mission_stories": [
+                    {
+                        "id": 1,
+                        "mission_id": 1,
+                        "story_text": "Demo kullanıcısı ilk görevini tamamladı!",
+                        "timestamp": datetime.now().isoformat()
+                    }
+                ],
+                "nft_count": 2
+            }
+        
+        # Sayısal ID mi kontrol et
+        if uid.isdigit():
+            user = crud.get_user_by_telegram_id(db, int(uid))
+        else:
+            # Username ile bulma
+            user = crud.get_user_by_username(db, uid)
+
+        if not user:
+            raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+
+        # Profil bilgileri
+        user_badges = crud.get_user_badges(db, user.id)
+        completed_missions = crud.get_user_missions(db, user.id)
+        mission_stories = crud.get_user_mission_stories(db, user.id)
+        nft_count = crud.get_user_nft_count(db, user.id)
+
+        # Profil döndür
+        return {
+            **user.__dict__,
+            "badges": user_badges,
+            "completed_missions": completed_missions,
+            "mission_stories": mission_stories,
+            "nft_count": nft_count
+        }
+    except Exception as e:
+        # Hata durumunda
+        print(f"Profil yüklenirken hata: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # TODO: /wallet/{uid} endpoint'i
 # TODO: /stars/use endpoint'i

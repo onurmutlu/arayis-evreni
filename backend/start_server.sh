@@ -1,37 +1,47 @@
 #!/bin/bash
 
-# Arayış Evreni API Sunucu Başlatma Betiği
-# EC2 üzerinde kullanım için
+# Uygulamanın kök dizinini belirle
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$APP_DIR" || exit 1
 
-echo "Arayış Evreni API başlatılıyor..."
+# Çalışan uvicorn süreçlerini kontrol et ve sonlandır
+echo "Çalışan uvicorn süreçleri kontrol ediliyor..."
+pkill -f "uvicorn main:app" || true
 
-# Uygulama dizinine git
-cd /home/ec2-user/arayis-evreni/backend
+# Ortam değişkenleri ve bağımlılıklar
+echo "Ortam değişkenleri kontrol ediliyor..."
+if [ ! -f .env.development ]; then
+    echo ".env.development dosyası bulunamadı, .env.example'den kopyalanıyor..."
+    cp .env.example .env.development
+fi
 
-# Sanal ortamı etkinleştir
-source venv/bin/activate
+# Virtual environment kontrol et
+echo "Virtual environment kontrol ediliyor..."
+if [ ! -d "venv" ]; then
+    echo "Virtual environment oluşturuluyor..."
+    python3 -m venv venv
+fi
 
-# Bağımlılıkları güncelle (opsiyonel - her başlatmada gerekli olmayabilir)
+# Virtual environment'ı aktifleştir
+echo "Virtual environment aktifleştiriliyor..."
+source venv/bin/activate || {
+    echo "Virtual environment aktifleştirilemedi!"
+    exit 1
+}
+
+# Bağımlılıkları yükle
+echo "Bağımlılıklar yükleniyor..."
 pip install -r requirements.txt
 
-# Veritabanı migrasyonlarını uygula
-alembic upgrade head
+# Python modulü olarak görünürlüğü sağla
+export PYTHONPATH="$APP_DIR:$PYTHONPATH"
 
-# Log dizininin var olduğundan emin ol
-mkdir -p ../logs
+# Portu belirle
+PORT=${1:-8000}
 
-# Sunucuyu başlat (Gunicorn ile)
-# Arka planda çalıştır ve log dosyasına yönlendir
-gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker \
-  --bind 0.0.0.0:8000 \
-  --daemon \
-  --access-logfile ../logs/api-access.log \
-  --error-logfile ../logs/api-error.log \
-  --log-level info \
-  --timeout 120
+# Sunucuyu başlat
+echo "Uygulama $PORT portunda başlatılıyor..."
+python -m uvicorn main:app --reload --host 0.0.0.0 --port $PORT
 
-echo "Sunucu başlatıldı!"
-echo "Loglar için:"
-echo "  Access log: tail -f ../logs/api-access.log"
-echo "  Error log: tail -f ../logs/api-error.log"
-echo "Sunucu durumu: ps aux | grep gunicorn" 
+# Virtual environment'ı deaktif et
+deactivate 

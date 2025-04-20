@@ -79,6 +79,14 @@ export enum NFTCategory {
   VOTE_BASIC = "vote-basic",
   VOTE_PREMIUM = "vote-premium",
   VOTE_SORA = "vote-sora",
+  WATCHER = "Watcher",
+  WARRIOR = "Warrior",
+  ORACLE = "Oracle",
+  GUARDIAN = "Guardian",
+  FLIRT = "Flirt",
+  HACKER = "Hacker",
+  CITY = "City",
+  DAO = "DAO"
 }
 
 export interface Nft {
@@ -98,6 +106,9 @@ export interface Nft {
   is_claimable?: boolean; // Claim edilebilir durumda mı? (Örn: bir görevden kazanıldı ama henüz claim edilmedi)
   is_elite?: boolean; // Elit bir NFT mi? (Sora özel koleksiyonu)
   subcategory?: string; // Alt kategori bilgisi (örn: Sora koleksiyonu için)
+  rarity?: string; // NFT nadir derecesi (Common, Rare, Epic, Legendary)
+  rarityClass?: string; // Nadir derece için stil sınıfı
+  className?: string; // Ek stil sınıfları
 }
 
 export interface UserNft {
@@ -151,6 +162,7 @@ export interface UserBadgeSchema {
   badge_name: string;
   badge_image_url: string;
   earned_at: string;
+  description?: string; // Rozet açıklaması için opsiyonel alan
 }
 
 export interface UserMissionSchema {

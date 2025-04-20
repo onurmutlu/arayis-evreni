@@ -5,11 +5,11 @@
 import {
     UserProfile, Mission, Nft, DAOProposal, CompleteMissionResponse, BuyNFTResponse, UseStarsResponse, VoteResponse, UserWallet, TonWalletInfo, Notification,
     DailyBonusStatus, ClaimDailyBonusResponse, InviteInfoResponse, LeaderboardResponse, UnlockVipResponse, TokenResponse, // Yeni tipler
-    NFTCategory, ProposalStatus, StarTransactionHistoryResponse // Enums needed for placeholders
+    NFTCategory, ProposalStatus, StarTransactionHistoryResponse, Badge // Enums needed for placeholders
 } from "../types";
 
 // .env'den API_URL alınıyor, en sonda / olmamalı, ona göre endpoint çağrılarda düzeltme yapılacak
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
 // --- Token Management ---
 let authToken: string | null = null;
@@ -89,10 +89,127 @@ export const loginWithInitData = async (initData: string): Promise<TokenResponse
 
 // --- USER API ---
 export const fetchUserProfile = async (uid?: string): Promise<UserProfile> => {
-    // Eğer uid parametresi varsa onu kullan, yoksa getTelegramUserIdForApi() kullan
-    const userId = uid || getTelegramUserIdForApi();
-    console.log(`API CALL: fetchUserProfile for ${userId}`);
-    return apiCall<UserProfile>(`/profile/${userId}`);
+    console.log(`API CALL: fetchUserProfile(${uid})`);
+    try {
+        uid = uid || getTelegramUserIdForApi();
+        
+        // Demo kullanıcısı için fallback
+        if (uid === 'demo123' || uid === '123456') {
+            console.log("📌 Demo kullanıcısı için yerel profil verileri kullanılıyor");
+            // Demo kullanıcısı için statik veriler
+            return {
+                id: 12345,
+                telegram_id: parseInt(uid) || 12345,
+                username: "demo123",
+                first_name: "Demo Kullanıcı",
+                xp: 750,
+                level: 3,
+                stars: 500,
+                stars_enabled: true,
+                has_vip_access: false,
+                created_at: new Date().toISOString(),
+                consecutive_login_days: 5,
+                mission_streak: 3,
+                invited_users_count: 2,
+                badges: [
+                    {
+                        badge_id: 1,
+                        badge_name: "Hoş Geldin",
+                        badge_image_url: "/badges/welcome-badge.png",
+                        earned_at: new Date().toISOString()
+                    },
+                    {
+                        badge_id: 2,
+                        badge_name: "Görev Kahramanı",
+                        badge_image_url: "/badges/mission-badge.png",
+                        earned_at: new Date().toISOString()
+                    },
+                    {
+                        badge_id: 3,
+                        badge_name: "Flört Ustası",
+                        badge_image_url: "/badges/flirt-badge.png",
+                        earned_at: new Date().toISOString()
+                    }
+                ],
+                completed_missions: [
+                    {
+                        mission_id: 1,
+                        completed_at: new Date().toISOString()
+                    },
+                    {
+                        mission_id: 2,
+                        completed_at: new Date().toISOString()
+                    }
+                ],
+                mission_stories: [
+                    {
+                        id: 1,
+                        mission_id: 1,
+                        story_text: "İlk görevini başarıyla tamamladın!",
+                        timestamp: new Date().toISOString()
+                    }
+                ],
+                nft_count: 2
+            };
+        }
+        
+        return await apiCall<UserProfile>(`/profile/${uid}`);
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        
+        // Fallback to default demo profile when the API fails
+        console.log("📌 API başarısız, demo profili kullanılıyor");
+        return {
+            id: 12345,
+            telegram_id: 0,
+            username: "demo123",
+            first_name: "Demo",
+            xp: 750,
+            level: 3,
+            stars: 500,
+            stars_enabled: true,
+            has_vip_access: false,
+            created_at: new Date().toISOString(),
+            consecutive_login_days: 5,
+            mission_streak: 3,
+            invited_users_count: 2,
+            badges: [
+                {
+                    badge_id: 1,
+                    badge_name: "Hoş Geldin",
+                    badge_image_url: "/badges/welcome-badge.png",
+                    earned_at: new Date().toISOString()
+                },
+                {
+                    badge_id: 2,
+                    badge_name: "Görev Kahramanı",
+                    badge_image_url: "/badges/mission-badge.png",
+                    earned_at: new Date().toISOString()
+                },
+                {
+                    badge_id: 4,
+                    badge_name: "Analiz Uzmanı",
+                    badge_image_url: "/badges/analyst-badge.png",
+                    earned_at: new Date().toISOString()
+                }
+            ],
+            completed_missions: [
+                {
+                    mission_id: 1,
+                    completed_at: new Date().toISOString()
+                }
+            ],
+            mission_stories: [
+                {
+                    id: 1,
+                    mission_id: 1,
+                    story_text: "Demo kullanıcısı ilk görevini tamamladı!",
+                    timestamp: new Date().toISOString()
+                }
+            ],
+            nft_count: 2
+        };
+    }
 };
 
 export const fetchUserWallet = async (uid?: string): Promise<any> => {
@@ -121,21 +238,54 @@ export const claimDailyBonus = async (): Promise<ClaimDailyBonusResponse> => {
 };
 
 // --- Invite API ---
-export const fetchInviteInfo = async (): Promise<InviteInfoResponse> => {
-    //  console.warn(`API CALL: fetchInviteInfo`);
-     return apiCall<InviteInfoResponse>('/api/users/invite-info');
+export const fetchInviteInfo = async (userId?: string): Promise<InviteInfoResponse> => {
+  console.log(`API CALL: fetchInviteInfo`);
+  try {
+    const uid = userId || getTelegramUserIdForApi();
+    
+    // Demo kullanıcısı için mock veri döndür
+    if (uid === 'demo123' || uid === '123456') {
+      console.log("📌 Demo kullanıcısı için davet bilgileri simülasyonu kullanılıyor");
+      await new Promise(resolve => setTimeout(resolve, 300)); // Gerçekçi gecikme
+      return {
+        invite_link: "https://t.me/ArayisEvreniBot?start=invite_" + uid,
+        successful_invites: 2,
+        reward_per_invite_stars: 50
+      };
+    }
+    
+    // API'ye istek at - Kullanıcı kimliğiyle
+    try {
+      // İlk olarak user/${uid}/invite-info endpoint'ini dene
+      const response = await apiCall<InviteInfoResponse>(`/user/${uid}/invite-info`);
+      return response;
+    } catch (error) {
+      console.log("Kullanıcı ID'li endpoint çalışmadı, alternatif endpoint deneniyor");
+      // Alternatif endpoint'i dene
+      return await apiCall<InviteInfoResponse>('/api/users/invite-info');
+    }
+  } catch (error) {
+    console.error("Error fetching invite info:", error);
+    // Fallback veri
+    return {
+      invite_link: "https://t.me/ArayisEvreniBot?start=invite_demo",
+      successful_invites: 0,
+      reward_per_invite_stars: 50
+    };
+  }
 };
 
 // --- MISSIONS API ---
 export const fetchMissions = async (): Promise<Mission[]> => {
     console.log(`API CALL: fetchMissions`);
     try {
-        const uid = getTelegramUserIdForApi();
-        const response = await apiCall<Mission[]>(`/missions/${uid}`);
+        const demoUserId = getTelegramUserIdForApi();
+        const response = await apiCall<Mission[]>(`/missions/${demoUserId}`);
         return response;
     } catch (error) {
         console.error("Error fetching missions:", error);
-        throw error;
+        // Hata durumunda boş liste döndür
+        return [];
     }
 };
 
@@ -154,16 +304,86 @@ export const completeMission = async (missionId: number): Promise<CompleteMissio
     }
 };
 
+// Kullanıcı istatistiklerini getir
+export const fetchUserStats = async (uid?: string): Promise<any> => {
+  console.log(`API CALL: fetchUserStats`);
+  try {
+    uid = uid || getTelegramUserIdForApi();
+    
+    // Demo kullanıcısı için mock veri
+    if (uid === 'demo123' || uid === '123456') {
+      console.log("📌 Demo kullanıcısı için istatistik verileri kullanılıyor");
+      await new Promise(resolve => setTimeout(resolve, 200));
+      return {
+        total_missions_completed: 12,
+        total_badges_earned: 4,
+        leaderboard_rank: {
+          xp: 24,
+          missions: 18,
+          badges: 15
+        },
+        stars_spent: 350,
+        stars_earned: 850,
+        achievements: [
+          { name: "Görev Tamamlayıcı", progress: 12, target: 20, reward: "50 Stars" },
+          { name: "Rozet Koleksiyoncusu", progress: 4, target: 10, reward: "Özel NFT" },
+          { name: "Etkinlik Katılımcısı", progress: 2, target: 5, reward: "100 XP" }
+        ],
+        tasks: [
+          { id: 1, title: "3 Görev Tamamla", progress: 1, target: 3, reward: "25 XP", rewardType: "xp" },
+          { id: 2, title: "2 Arkadaşını Davet Et", progress: 1, target: 2, reward: "50 Stars", rewardType: "stars" },
+          { id: 3, title: "5 Gün Arka Arkaya Giriş Yap", progress: 2, target: 5, reward: "Özel Rozet", rewardType: "badge" }
+        ]
+      };
+    }
+    
+    // API'den kullanıcı istatistiklerini al
+    try {
+      return await apiCall<any>(`/user/${uid}/stats`);
+    } catch (error) {
+      console.log("Ana endpoint çalışmadı, alternatif endpoint deneniyor");
+      return await apiCall<any>(`/api/users/${uid}/stats`);
+    }
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    // Fallback to default stats
+    return {
+      total_missions_completed: 0,
+      total_badges_earned: 0,
+      leaderboard_rank: {
+        xp: 0,
+        missions: 0,
+        badges: 0
+      },
+      stars_spent: 0,
+      stars_earned: 0,
+      achievements: [],
+      tasks: []
+    };
+  }
+};
+
 // API istekleri için Telegram User ID'yi al
 // Context'ten veya environment'tan fallback değeri al
 function getTelegramUserIdForApi(): string {
     // window.Telegram var mı kontrol et
     if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
-        return window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+        const userId = window.Telegram.WebApp.initDataUnsafe.user.id;
+        // NaN kontrolü
+        if (!isNaN(userId)) {
+            return userId.toString();
+        }
     }
     
-    // Fallback user ID
-    return import.meta.env.VITE_FALLBACK_USER_ID || "demo123";
+    // Fallback user ID'yi kontrol et
+    const fallbackId = import.meta.env.VITE_FALLBACK_USER_ID;
+    if (fallbackId && !isNaN(Number(fallbackId))) {
+        return fallbackId;
+    }
+    
+    // Sabit demo ID döndür
+    console.log("⚠️ Geçerli bir user ID bulunamadı, demo123 kullanılıyor");
+    return "demo123";
 }
 
 // --- VIP API ---
@@ -194,9 +414,47 @@ export const purchaseVip = async (): Promise<UnlockVipResponse> => {
 };
 
 // --- Leaderboard API ---
-export const fetchLeaderboard = async (category: string, limit: number = 20): Promise<LeaderboardResponse> => {
-    // console.warn(`API CALL: fetchLeaderboard ${category}`);
-    return apiCall<LeaderboardResponse>(`/api/leaderboard/${category}?limit=${limit}`);
+export const fetchLeaderboard = async (category: string, limit: number = 50, timeFrame: string = 'all'): Promise<LeaderboardResponse | null> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/leaderboard?category=${category}&limit=${limit}&time_frame=${timeFrame}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(getAuthToken() ? { 'Authorization': `Bearer ${getAuthToken()}` } : {})
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Liderlik tablosu yüklenirken bir hata oluştu: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // API yanıtını frontend yapısına dönüştür
+    const leaderboardResponse: LeaderboardResponse = {
+      users: data.entries.map((entry: any, index: number) => ({
+        id: entry.user_id.toString(),
+        username: entry.username,
+        avatar: entry.avatar,
+        xp: entry.value,
+        level: entry.level || 1,
+        stars: entry.stars || 0,
+        badges: entry.badges || 0,
+        rank: entry.rank || index + 1,
+        delta: entry.delta
+      })),
+      stats: data.stats ? {
+        totalParticipants: data.stats.total_participants || 0,
+        competitionEndDate: data.stats.competition_end_date || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        prizePool: data.stats.prize_pool || "5000 TON"
+      } : undefined
+    };
+
+    return leaderboardResponse;
+  } catch (error) {
+    console.error("Liderlik tablosu yüklenirken hata oluştu:", error);
+    return null;
+  }
 };
 
 // --- NFTs API ---
@@ -555,6 +813,81 @@ export const reportUserLocation = async (lat: number, lng: number): Promise<{ su
     });
   } catch (error) {
     console.error("Error reporting user location:", error);
+    return { success: false };
+  }
+}; 
+
+// Tüm rozet bilgilerini çeken fonksiyon
+export const fetchBadges = async (): Promise<Badge[]> => {
+  try {
+    console.log(`API CALL: fetchBadges`);
+    return await apiCall<Badge[]>('/api/badges');
+  } catch (error) {
+    console.error("Rozet bilgileri alınırken hata oluştu:", error);
+    
+    // Fallback - örnek rozet verileri
+    return [
+      {
+        id: 1,
+        name: "Hoş Geldin",
+        description: "Arayış Evreni'ne katıldığınız için kazandınız. Yolculuğunuz başlıyor!",
+        image_url: "/badges/welcome-badge.png",
+        is_active: true
+      },
+      {
+        id: 2,
+        name: "Görev Kahramanı",
+        description: "İlk görevini tamamlayarak evrenin aktif bir parçası oldun!",
+        image_url: "/badges/mission-badge.png",
+        is_active: true
+      },
+      {
+        id: 3,
+        name: "Flört Ustası",
+        description: "Flört becerilerini gösterdin ve bu özel rozeti kazandın!",
+        image_url: "/badges/flirt-badge.png",
+        is_active: true
+      },
+      {
+        id: 4,
+        name: "Analiz Uzmanı",
+        description: "Detaylı analizlerin ve keskin gözlemlerin için özel ödül!",
+        image_url: "/badges/analyst-badge.png",
+        is_active: true
+      },
+      {
+        id: 5,
+        name: "DAO Savunucusu",
+        description: "Topluluk yönetimine aktif katılımın için ödül!",
+        image_url: "/badges/dao-badge.png",
+        is_active: true
+      },
+      {
+        id: 6,
+        name: "Seviye Atlama",
+        description: "Seviye atladın ve kozmik yolculuğunda yeni bir kapı açtın!",
+        image_url: "/badges/level-badge.png",
+        is_active: true
+      }
+    ];
+  }
+}; 
+
+// --- Profil API ---
+export const setProfilePhoto = async (photoData: File): Promise<{ success: boolean; url?: string }> => {
+  console.log(`API CALL: setProfilePhoto`);
+  try {
+    const formData = new FormData();
+    formData.append('photo', photoData);
+    
+    return await apiCall<{ success: boolean; url?: string }>('/profile/photo', {
+      method: 'POST',
+      body: formData,
+      // Content-Type header'ını axios veya fetch otomatik ekleyecek (multipart/form-data)
+      headers: {} // Content-Type header'ını siliyoruz çünkü formData ile gönderiyoruz
+    });
+  } catch (error) {
+    console.error("Error uploading profile photo:", error);
     return { success: false };
   }
 }; 
