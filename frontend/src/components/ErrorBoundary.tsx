@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import errorReporting from '../utils/errorReporting';
+import { reportError } from '../utils/errorReporting';
 
 interface Props {
   children: ReactNode;
@@ -29,11 +29,11 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Hata raporlama servisine hatayı gönder
-    errorReporting.captureError(
+    reportError(
       error,
-      { componentStack: errorInfo.componentStack },
-      this.props.componentName || 'ErrorBoundary'
+      'RENDER_ERROR', 
+      this.props.componentName || 'ErrorBoundary',
+      { componentStack: errorInfo.componentStack }
     );
   }
 

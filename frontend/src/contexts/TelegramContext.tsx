@@ -1,5 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
+
+
 // TelegramUser tipini tanımla
 export interface TelegramUser {
   id: number;
@@ -50,7 +52,7 @@ export const TelegramProvider: React.FC<{ children: ReactNode }> = ({ children }
       setIsTelegramContext(true);
       
       // Telegram WebApp tema parametrelerini CSS değişkenlerine uygula
-      const theme = window.Telegram.WebApp.themeParams;
+      const theme = (window.Telegram?.WebApp as any).themeParams;
       if (theme) {
         // Ana renkleri ayarla
         document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#ffffff');
@@ -77,8 +79,8 @@ export const TelegramProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
       
       // Kullanıcı bilgisini ayarla
-      if (window.Telegram.WebApp.initDataUnsafe?.user) {
-        setUser(window.Telegram.WebApp.initDataUnsafe.user);
+      if ((window.Telegram?.WebApp as any).initDataUnsafe?.user) {
+        setUser((window.Telegram?.WebApp as any).initDataUnsafe.user);
       }
       
       // WebApp'i genişlet
@@ -140,7 +142,7 @@ export const TelegramProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Ham initData bilgisini alma fonksiyonu
   const getInitDataRaw = (): string => {
     if (window.Telegram && window.Telegram.WebApp) {
-      return window.Telegram.WebApp.initData || '';
+      return (window.Telegram.WebApp as any).initData || '';
     }
     return '';
   };
@@ -199,10 +201,13 @@ export const showNotification = (type: 'error' | 'success' | 'warning') => {
 };
 
 export const showMainButton = (text: string, onClick: () => void) => {
-  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.MainButton) {
-    window.Telegram.WebApp.MainButton.setText(text);
-    window.Telegram.WebApp.MainButton.onClick(onClick);
-    window.Telegram.WebApp.MainButton.show();
+  if (window.Telegram && window.Telegram.WebApp) {
+    const webApp = window.Telegram.WebApp as any;
+    if (webApp.MainButton) {
+      webApp.MainButton.setText(text);
+      webApp.MainButton.onClick(onClick);
+      webApp.MainButton.show();
+    }
   }
 };
 
@@ -214,22 +219,29 @@ export const hideMainButton = () => {
 
 // Back Button Kontrolü
 export const showBackButton = (onClick: () => void) => {
-  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.BackButton) {
-    window.Telegram.WebApp.BackButton.onClick(onClick);
-    window.Telegram.WebApp.BackButton.show();
+  if (window.Telegram && window.Telegram.WebApp) {
+    const webApp = window.Telegram.WebApp as any;
+    if (webApp.BackButton) {
+      webApp.BackButton.onClick(onClick);
+      webApp.BackButton.show();
+    }
   }
 };
 
 export const hideBackButton = () => {
-  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.BackButton) {
-    window.Telegram.WebApp.BackButton.hide();
+  if (window.Telegram && window.Telegram.WebApp) {
+    const webApp = window.Telegram.WebApp as any;
+    if (webApp.BackButton) {
+      webApp.BackButton.hide();
+    }
   }
 };
 
 // Link açma yardımcıları
 export const openLink = (url: string) => {
   if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.openLink(url);
+    const webApp = window.Telegram.WebApp as any;
+    webApp.openLink(url);
   } else {
     window.open(url, '_blank');
   }
@@ -237,7 +249,8 @@ export const openLink = (url: string) => {
 
 export const openTelegramLink = (url: string) => {
   if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.openTelegramLink(url);
+    const webApp = window.Telegram.WebApp as any;
+    webApp.openTelegramLink(url);
   } else {
     window.open(url, '_blank');
   }
