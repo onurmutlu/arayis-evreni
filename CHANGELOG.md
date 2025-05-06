@@ -2,6 +2,52 @@
 
 Arayış Evreni projesinde yapılan tüm önemli değişiklikler bu dosyada belgelenmiştir. Format, [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/) standartlarını izler.
 
+## [1.0.2] - 2024-05-12
+
+### 🔧 API İyileştirmeleri
+- NFT API'leri tam olarak birleştirildi ve optimize edildi
+- nft.py ve nfts.py modülleri tamamen tek bir dosyada (nfts.py) toplandı
+- Endpoint prefix'leri standardize edildi (/nfts)
+- Geriye dönük uyumluluk için yönlendirmeler eklendi
+- Yeni endpoint'ler: `/metadata/list`, `/metadata/{id}`, `/details/{nft_id}`
+
+### 🛠️ Yapısal İyileştirmeler
+- main.py dosyasından nft.py modülü kaldırıldı
+- Router prefix'leri düzenlendi, artık sadece "/nfts" prefix'i kullanılıyor
+- Frontend entegrasyonu doğrulandı ve API çağrıları test edildi
+- Kod kalitesi ve okunabilirlik iyileştirildi
+
+### 📚 Dokümantasyon
+- README-PROD-ROLLOUT.md dosyası güncellendi
+- Üretim öncesi kontrol listesi detaylandırıldı
+- Yeni versiyonlama sistemi uygulandı
+- API değişiklikleri dokümantasyona yansıtıldı
+
+## [1.0.1] - 2024-05-05
+
+### 🔧 API İyileştirmeleri
+- NFT API'leri (nft.py ve nfts.py) tek bir dosyada birleştirildi
+- API endpoint'leri daha tutarlı hale getirildi
+- Eski endpoint'lere yönlendirmeler eklenerek geriye dönük uyumluluk sağlandı
+- Metadata ve CRUD operasyonları tek bir router altında toplandı
+
+### 🐛 Hata Düzeltmeleri
+- NFT metadata döndürme endpoint'lerindeki çakışmalar giderildi
+- Tutarsız API yanıtları standartlaştırıldı
+- HTTP durum kodları düzeltildi ve tutarlı hale getirildi
+- API dokümantasyonu güncellendi
+
+### 🚀 Performans İyileştirmeleri
+- API yanıt süreleri optimize edildi
+- Veritabanı sorgularında performans iyileştirmeleri
+- Önbellek mekanizması iyileştirildi
+- HTTP isteklerinde yük azaltıldı
+
+### 📚 Dokümantasyon
+- README-PROD-ROLLOUT.md eklendi
+- Deployment talimatları detaylandırıldı
+- Üretim ortamı kontrol listesi oluşturuldu
+
 ## [1.2.0] - 2024-06-01 (Planlanan)
 
 ### 🚀 TON Blockchain ve Token Entegrasyonu

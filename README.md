@@ -4,6 +4,17 @@ Arayış Evreni, Telegram Mini App platformu üzerinde çalışan, Web3 teknoloj
 
 ![Arayış Evreni](https://via.placeholder.com/1200x630?text=Arayış+Evreni+Ekosistemi)
 
+## 🆕 Güncel Versiyon: v1.0.2
+Şu anki sürüm: **v1.0.2** (12 Mayıs 2024)
+
+Yapılan son değişiklikler:
+- NFT API'leri tek bir modülde birleştirildi (nfts.py)
+- API endpoint'leri tutarlı ve standart hale getirildi
+- API prefix'leri optimize edildi
+- Üretim ortamına geçiş hazırlıkları tamamlandı
+
+Tüm değişiklikler için [CHANGELOG.md](./CHANGELOG.md) dosyasını inceleyebilirsiniz.
+
 ## 💫 Vizyon
 
 Arayış Evreni, kripto teknolojilerini ve dijital varlık ekonomisini sıradan kullanıcılar için erişilebilir kılmayı hedefleyen, eğlence ile faydalı bilgiyi harmanlayan bir platforma dönüşmeyi amaçlamaktadır. Misyonumuz, kullanıcıların dijital kimliklerini oluşturmalarına, değerli varlıklar biriktirmelerine ve topluluk tarafından yönetilen bir ekosisteme aktif olarak katılmalarına olanak tanımaktır.
